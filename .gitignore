@@ -1,0 +1,45 @@
+# Общие
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+*.pot
+*.py[cod]
+*$py.class
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Виртуальное окружение
+venv/
+.env/
+*.env
+
+# Django (бэкэнд)
+back/media/
+back/staticfiles/
+back/static/
+back/db.sqlite3
+back/__pycache__/
+back/*/__pycache__/
+
+# React (фронт)
+front/node_modules/
+front/build/
+front/.env.local
+front/.env.development.local
+front/.env.production.local
+front/.env.test.local
+
+# Тесты и кэш
+.coverage
+.tox/
+pytest_cache/
+.mypy_cache/
+.cache/
