@@ -1,78 +1,58 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { registerApi } from "../../api/auth";
 
 export default function RegisterForm() {
-  const [form, setForm] = useState({
-    username: "",
-    email: "",
-    password: "",
-    confirm: "",
-  });
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    if (!form.username || !form.email || !form.password || !form.confirm) {
-      setError("Заполни все поля!");
+    setLoading(true);
+    setError(null);
+    if (password !== password2) {
+      setError("Пароли не совпадают");
+      setLoading(false);
       return;
     }
-
-    if (form.password !== form.confirm) {
-      setError("Пароли не совпадают!");
-      return;
+    try {
+      await registerApi({ username, email, password, password2 });
+      // после удачной регистрации — перейти на страницу входа
+      navigate("/login");
+    } catch (err) {
+      const msg = (err && err.data && (err.data.detail || err.data.error || JSON.stringify(err.data))) || "Ошибка регистрации";
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
-
-    console.log("Отправляем:", form);
-    setSuccess("Регистрация успешна! 🎉");
-    setForm({ username: "", email: "", password: "", confirm: "" });
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="register-form">
-      <input
-        type="text"
-        name="username"
-        placeholder="Логин"
-        value={form.username}
-        onChange={handleChange}
-      />
+    <form className="register-form" onSubmit={handleSubmit}>
+      <div>
+        <label>Логин</label>
+        <input value={username} onChange={(e) => setUsername(e.target.value)} />
+      </div>
+      <div>
+        <label>Email</label>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} />
+      </div>
+      <div>
+        <label>Пароль</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      </div>
+      <div>
+        <label>Повтор пароля</label>
+        <input type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} />
+      </div>
 
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-        value={form.email}
-        onChange={handleChange}
-      />
-
-      <input
-        type="password"
-        name="password"
-        placeholder="Пароль"
-        value={form.password}
-        onChange={handleChange}
-      />
-
-      <input
-        type="password"
-        name="confirm"
-        placeholder="Повторите пароль"
-        value={form.confirm}
-        onChange={handleChange}
-      />
-
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">{success}</p>}
-
-      <button type="submit">Зарегистрироваться</button>
+      {error && <div className="error">{error}</div>}
+      <button type="submit" disabled={loading}>{loading ? "Регистрация..." : "Зарегистрироваться"}</button>
     </form>
   );
 }

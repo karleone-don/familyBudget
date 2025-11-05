@@ -1,41 +1,62 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { loginApi } from "../../api/auth";
 
 export default function LoginForm() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-    if (!username || !password) {
-      setError("Заполни оба поля!");
-      return;
+    try {
+      const { token, user, redirect } = await loginApi({ email, password });
+
+      // Store auth data
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // Redirect to role-specific dashboard or fallback to home
+      navigate(redirect || "/");
+    } catch (err) {
+      setError(err.data?.non_field_errors?.[0] || "Invalid email or password");
+    } finally {
+      setLoading(false);
     }
-
-    console.log("Отправляем:", { username, password });
-    alert("Логин выполнен (пока без сервера)");
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="login-form">
-      <input
-        type="text"
-        placeholder="Логин"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
+    <form className="login-form" onSubmit={handleSubmit}>
+      <div>
+        <label>E-mail</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          placeholder="your@email.com"
+        />
+      </div>
+      <div>
+        <label>Пароль</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
 
-      <input
-        type="password"
-        placeholder="Пароль"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      {error && <div className="error">{error}</div>}
 
-      {error && <p className="error">{error}</p>}
-
-      <button type="submit">Войти</button>
+      <button type="submit" disabled={loading}>
+        {loading ? "Входим..." : "Войти"}
+      </button>
     </form>
   );
 }
