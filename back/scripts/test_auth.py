@@ -66,7 +66,8 @@ def get_user_test_data() -> list:
         # Special cases for specific users
         email_password_map = {
             'abzal@kbtu.kz': 'abzalpass123',
-            'zhaxylyk@kbtu.kz': 'zhaxylykpass123'
+            'zhaxylyk@kbtu.kz': 'zhaxylykpass123',
+            'new.user@example.com': 'newpass123'
         }
         
         password = email_password_map.get(user.email) or password_map.get(role_name, 'solopass123')
