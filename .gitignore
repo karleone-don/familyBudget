@@ -16,10 +16,17 @@ Thumbs.db
 .vscode/
 *.swp
 
-# Виртуальное окружение
+# Virtual Environment
 venv/
+.venv/
+env/
 .env/
+ENV/
 *.env
+env.bak/
+venv.bak/
+python-env/
+pythonenv*
 
 # Django (бэкэнд)
 back/media/
