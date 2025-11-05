@@ -1,7 +1,25 @@
+import os
+import sys
 import requests
 import json
 import time
 from pprint import pprint
+
+# Add project root to Python path
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+# Set up Django environment
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'family_budget.settings')
+import django
+django.setup()
+
+# Import Django models
+from django.contrib.auth import get_user_model
+from family_budget_app.models import Role, Family
+
+User = get_user_model()
 
 # Wait for server to be ready
 base_url = 'http://127.0.0.1:8000'
@@ -13,33 +31,28 @@ for _ in range(5):
         print("Waiting for server...")
         time.sleep(1)
 
-# Test users (from create_sample_users.py)
-users = [
-    {
-        'role': 'Admin user',
-        'email': 'admin1@example.com',
-        'password': 'adminpass123',
-        'expected_redirect': '/admin-dashboard'
-    },
-    {
-        'role': 'Family member',
-        'email': 'member1@example.com',
-        'password': 'memberpass123',
-        'expected_redirect': '/member-dashboard'
-    },
-    {
-        'role': 'Kid user',
-        'email': 'kid1@example.com',
-        'password': 'kidpass123',
-        'expected_redirect': '/kid-dashboard'
-    },
-    {
-        'role': 'Solo user (no family)',
-        'email': 'solo@example.com',
-        'password': 'solopass123',
-        'expected_redirect': '/solo-dashboard'
-    }
-]
+# Get users from database
+def get_redirect_url(role_name):
+    if role_name == 'admin':
+        return '/admin-dashboard'
+    elif role_name == 'family_member':
+        return '/member-dashboard'
+    elif role_name == 'kid':
+        return '/kid-dashboard'
+    else:
+        return '/solo-dashboard'
+
+users = []
+for user in User.objects.all():
+    role_name = user.role.role_name if user.role else 'solo'
+    users.append({
+        'role': f"{role_name.replace('_', ' ').title()} user",
+        'email': user.email,
+        'password': 'adminpass123' if role_name == 'admin' else 
+                   'memberpass123' if role_name == 'family_member' else
+                   'kidpass123' if role_name == 'kid' else 'solopass123',
+        'expected_redirect': get_redirect_url(role_name)
+    })
 
 for user in users:
     print(f"\n=== Testing {user['role']} login ===")
