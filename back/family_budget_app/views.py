@@ -76,7 +76,7 @@ class FamilyViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         family = serializer.save(admin=self.request.user)
         self.request.user.family = family
-        admin_role = Role.objects.get(role_name='admin')
+        admin_role, _ = Role.objects.get_or_create(role_name='admin')
         self.request.user.role = admin_role
         self.request.user.save()
 
@@ -116,7 +116,7 @@ class FamilyViewSet(viewsets.ModelViewSet):
         if not user or not user.is_authenticated:
             return Response({'error': 'Authentication required to join by code'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        member_role = Role.objects.get(role_name='family_member')
+        member_role, _ = Role.objects.get_or_create(role_name='family_member')
         user.family = family
         user.role = member_role
         user.save()
@@ -137,7 +137,7 @@ class FamilyViewSet(viewsets.ModelViewSet):
         if user.email.lower() != invite.invited_email.lower():
             return Response({'error': 'This invitation is not for your account'}, status=status.HTTP_403_FORBIDDEN)
 
-        member_role = Role.objects.get(role_name='family_member')
+        member_role, _ = Role.objects.get_or_create(role_name='family_member')
         user.family = invite.family
         user.role = member_role
         user.save()
@@ -182,10 +182,8 @@ class FamilyViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'User not found in family'}, status=status.HTTP_404_NOT_FOUND)
 
-        try:
-            role = Role.objects.get(role_name=role_name)
-        except Role.DoesNotExist:
-            return Response({'error': 'Role not found'}, status=status.HTTP_404_NOT_FOUND)
+        # allow creating new roles on demand
+        role, _ = Role.objects.get_or_create(role_name=role_name)
 
         user.role = role
         user.save()
@@ -197,7 +195,7 @@ class FamilyViewSet(viewsets.ModelViewSet):
         try:
             family = Family.objects.get(family_id=family_id)
             request.user.family = family
-            member_role = Role.objects.get(role_name='family_member')
+            member_role, _ = Role.objects.get_or_create(role_name='family_member')
             request.user.role = member_role
             request.user.save()
             return Response({'message': 'Successfully joined family'})
@@ -214,8 +212,8 @@ class FamilyViewSet(viewsets.ModelViewSet):
 
         try:
             user = User.objects.get(user_id=user_id, family=self.get_object())
-            kid_role = Role.objects.get(role_name='kid')
-            member_role = Role.objects.get(role_name='family_member')
+            kid_role, _ = Role.objects.get_or_create(role_name='kid')
+            member_role, _ = Role.objects.get_or_create(role_name='family_member')
 
             user.role = kid_role if is_kid else member_role
             user.save()

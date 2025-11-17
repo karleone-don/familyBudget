@@ -31,7 +31,10 @@ class Family(models.Model):
 
 class User(AbstractUser):
     # Inherits password hashing from AbstractUser
-    user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # Keep primary key type compatible with existing migrations (AutoField)
+    # The initial migration created `user_id` as an AutoField, so use the same
+    # here to avoid datatype mismatch with the existing SQLite DB.
+    user_id = models.AutoField(primary_key=True)
     age = models.IntegerField(null=True, blank=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
     family = models.ForeignKey(Family, on_delete=models.SET_NULL, null=True, blank=True, related_name='members')

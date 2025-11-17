@@ -24,8 +24,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Handle optional role_name provided as string. Default to 'solo' when not provided.
-        role_name = validated_data.pop('role_name', None) or 'solo'
+        # Handle optional role_name provided as string. Only assign when given.
+        role_name = validated_data.pop('role_name', None)
         # If role (id) was provided, remove it from kwargs because create_user doesn't accept it
         validated_data.pop('role', None)
         # Remove password2 before creating
@@ -35,10 +35,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         # Assign role if role_name provided (create if doesn't exist)
         if role_name:
-            try:
-                role_obj = Role.objects.get(role_name=role_name)
-            except Role.DoesNotExist:
-                role_obj = Role.objects.create(role_name=role_name)
+            role_obj, _ = Role.objects.get_or_create(role_name=role_name)
             user.role = role_obj
             user.save()
 
@@ -55,7 +52,9 @@ class UserLoginSerializer(serializers.Serializer):
         password = attrs.get('password')
 
         if email and password:
-            user = authenticate(username=email, password=password)
+            # pass request from context so custom backends that expect it work correctly
+            request = self.context.get('request') if hasattr(self, 'context') else None
+            user = authenticate(request=request, username=email, password=password)
             if not user:
                 raise serializers.ValidationError('Invalid credentials')
             attrs['user'] = user
