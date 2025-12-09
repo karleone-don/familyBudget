@@ -9,6 +9,7 @@ router.register(r'families', FamilyViewSet)
 router.register(r'finance', FinanceViewSet)
 router.register(r'transactions', TransactionViewSet)
 router.register(r'goals', GoalViewSet)
+router.register(r'ai', AIAssistantViewSet, basename='ai')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from django.db import transaction
 from .models import User, Family, Finance, Transaction, Goal, Role, Category, Invitation
 from .serializers import *
+from .ai_service import BudgetAIService
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -286,3 +287,141 @@ class GoalViewSet(viewsets.ModelViewSet):
     queryset = Goal.objects.all()
     serializer_class = GoalSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+class AIAssistantViewSet(viewsets.ViewSet):
+    """
+    AI-powered budget analysis and recommendations
+    
+    Endpoints:
+    - GET /api/ai/analyze/ - Spending analysis by category and time period
+    - GET /api/ai/predict/ - Predict monthly expenses using linear regression
+    - GET /api/ai/recommendations/ - Get personalized budget recommendations
+    - GET /api/ai/anomalies/ - Detect unusual transactions
+    - POST /api/ai/categorize/ - Auto-categorize transaction by description
+    """
+    permission_classes = [IsAuthenticated]
+
+    def _get_ai_service(self, user):
+        """Initialize AI service for user"""
+        return BudgetAIService(user)
+
+    @action(detail=False, methods=['get'])
+    def analyze(self, request):
+        """
+        Analyze user's spending patterns
+        
+        Returns spending breakdown by category and month, plus averages and trends
+        """
+        try:
+            ai_service = self._get_ai_service(request.user)
+            analysis = ai_service.analyze_spending()
+            return Response({
+                'status': 'success',
+                'data': analysis
+            })
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def predict(self, request):
+        """
+        Predict monthly expenses for next N months using linear regression
+        
+        Query params:
+        - months_ahead: Number of months to predict (default: 1, max: 12)
+        """
+        try:
+            months_ahead = int(request.query_params.get('months_ahead', 1))
+            months_ahead = min(max(months_ahead, 1), 12)  # Clamp between 1-12
+            
+            ai_service = self._get_ai_service(request.user)
+            prediction = ai_service.predict_monthly_expenses(months_ahead)
+            return Response({
+                'status': 'success',
+                'data': prediction
+            })
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def recommendations(self, request):
+        """
+        Get personalized budget recommendations based on spending patterns
+        
+        Returns recommendations with priority levels and potential savings
+        """
+        try:
+            ai_service = self._get_ai_service(request.user)
+            recommendations = ai_service.get_budget_recommendations()
+            return Response({
+                'status': 'success',
+                'data': recommendations
+            })
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def anomalies(self, request):
+        """
+        Detect unusual transactions using statistical analysis
+        
+        Query params:
+        - threshold: Standard deviations from mean (default: 2.0)
+        """
+        try:
+            threshold = float(request.query_params.get('threshold', 2.0))
+            threshold = max(threshold, 1.0)  # Minimum 1 std dev
+            
+            ai_service = self._get_ai_service(request.user)
+            anomalies = ai_service.detect_anomalies(threshold)
+            return Response({
+                'status': 'success',
+                'data': anomalies
+            })
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'])
+    def categorize(self, request):
+        """
+        Auto-categorize a transaction based on description
+        
+        Request body:
+        {
+            "description": "Starbucks coffee shop"
+        }
+        
+        Returns suggested category with confidence score
+        """
+        try:
+            description = request.data.get('description', '')
+            if not description:
+                return Response({
+                    'status': 'error',
+                    'message': 'description field is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            ai_service = self._get_ai_service(request.user)
+            categorization = ai_service.categorize_transaction(description)
+            return Response({
+                'status': 'success',
+                'data': categorization
+            })
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
