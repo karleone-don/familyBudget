@@ -17,13 +17,16 @@ const FamilyMember = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
-  const [viewMode, setViewMode] = useState("personal"); // "personal" or "family"
+  const [viewMode, setViewMode] = useState("personal");
   const [canViewOthers, setCanViewOthers] = useState(false);
+  const [recommendations, setRecommendations] = useState([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
   useEffect(() => {
     fetchData();
+    fetchRecommendations();
   }, []);
 
   const fetchData = async () => {
@@ -111,6 +114,29 @@ const FamilyMember = () => {
     }
   };
 
+  const fetchRecommendations = async () => {
+    try {
+      setLoadingRecommendations(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/api/ai/recommendations/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRecommendations(data.recommendations || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch recommendations:", err);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
   const calculateSummary = (myExpensesList, allTransactions) => {
     const myTotal = myExpensesList.reduce(
       (sum, exp) => sum + parseFloat(exp.amount),
@@ -175,6 +201,29 @@ const FamilyMember = () => {
       </div>
 
       {error && <div className="error-message">{error}</div>}
+
+      {/* AI Recommendations */}
+      {recommendations.length > 0 && (
+        <div className="recommendations-section">
+          <h3>💡 AI Budget Recommendations</h3>
+          <div className="recommendations-list">
+            {recommendations.slice(0, 3).map((rec, idx) => (
+              <div key={idx} className={`recommendation-card priority-${rec.priority}`}>
+                <div className="recommendation-header">
+                  <h4>{rec.title}</h4>
+                  <span className="priority-badge">{rec.priority}</span>
+                </div>
+                <p className="recommendation-description">{rec.description}</p>
+                {rec.potential_savings > 0 && (
+                  <p className="potential-savings">
+                    💰 Potential savings: ${rec.potential_savings.toFixed(2)}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* View Mode Toggle - Only for non-kids */}
       {canViewOthers && userProfile.family && (
