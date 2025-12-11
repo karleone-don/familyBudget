@@ -89,9 +89,31 @@ class FinanceSerializer(serializers.ModelSerializer):
         fields = ['finance_id', 'balance', 'income', 'expenses', 'updated_at']
 
 class TransactionSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField(read_only=True)
+    category_name = serializers.SerializerMethodField(read_only=True)
+    transaction_type = serializers.SerializerMethodField(read_only=True)
+    
     class Meta:
         model = Transaction
-        fields = '__all__'
+        fields = ['transaction_id', 'amount', 'category', 'category_name', 'type', 'transaction_type', 'date', 'description', 'user']
+
+    def get_user(self, obj):
+        """Return user information from the related Finance object"""
+        if obj.finance and obj.finance.user:
+            return {
+                'user_id': obj.finance.user.user_id,
+                'username': obj.finance.user.username,
+                'email': obj.finance.user.email,
+            }
+        return None
+
+    def get_category_name(self, obj):
+        """Return category name"""
+        return obj.category.category_name if obj.category else 'Uncategorized'
+
+    def get_transaction_type(self, obj):
+        """Return transaction type display name"""
+        return 'income' if obj.type == 'income' else 'expense'
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

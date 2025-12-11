@@ -20,21 +20,21 @@ const FamilyMember = () => {
   const [viewMode, setViewMode] = useState("personal");
   const [canViewOthers, setCanViewOthers] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
-
-  useEffect(() => {
-    fetchData();
-    fetchRecommendations();
-  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = localStorage.getItem("token");
 
-      // Fetch user profile
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      // Fetch user profile first
       const profileResponse = await fetch(`${API_URL}/api/users/profile/`, {
         method: "GET",
         headers: {
@@ -48,7 +48,7 @@ const FamilyMember = () => {
           navigate("/login");
           return;
         }
-        throw new Error("Failed to fetch user profile");
+        throw new Error(`Failed to fetch user profile: ${profileResponse.status}`);
       }
 
       const profile = await profileResponse.json();
@@ -59,45 +59,47 @@ const FamilyMember = () => {
       setCanViewOthers(isNonKid);
       setSelectedMember(profile.username);
 
-      // Fetch family data
-      if (profile.family) {
-        const familyResponse = await fetch(`${API_URL}/api/family/`, {
+      // Fetch remaining data in parallel
+      const requests = [
+        fetch(`${API_URL}/api/transactions/`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Token ${token}`,
           },
-        });
+        }),
+        fetch(`${API_URL}/api/ai/recommendations/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`,
+          },
+        }),
+      ];
 
-        if (familyResponse.ok) {
-          const familyInfo = await familyResponse.json();
-          setFamilyData(familyInfo);
-
-          // Fetch all family members
-          const membersResponse = await fetch(`${API_URL}/api/family-members/`, {
+      // Add family-related requests if user has family
+      if (profile.family) {
+        requests.push(
+          fetch(`${API_URL}/api/families/my_family/`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Token ${token}`,
             },
-          });
-
-          if (membersResponse.ok) {
-            const membersList = await membersResponse.json();
-            setAllMembers(Array.isArray(membersList) ? membersList : membersList.results || []);
-          }
-        }
+          }),
+          fetch(`${API_URL}/api/families/family_members/`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Token ${token}`,
+            },
+          })
+        );
       }
 
-      // Fetch transactions
-      const transResponse = await fetch(`${API_URL}/api/transactions/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-      });
+      const [transResponse, recResponse, ...familyResponses] = await Promise.all(requests);
 
+      // Process transactions
       if (transResponse.ok) {
         const transList = await transResponse.json();
         const allTransactions = Array.isArray(transList) ? transList : transList.results || [];
@@ -107,35 +109,37 @@ const FamilyMember = () => {
         setExpenses(allTransactions);
         calculateSummary(myExpenses, allTransactions);
       }
+
+      // Process recommendations
+      if (recResponse.ok) {
+        const recData = await recResponse.json();
+        setRecommendations(recData.recommendations || []);
+      }
+
+      // Process family data if present
+      if (profile.family && familyResponses.length > 0) {
+        const [familyResponse, membersResponse] = familyResponses;
+        if (familyResponse.ok) {
+          const familyInfo = await familyResponse.json();
+          setFamilyData(familyInfo);
+        }
+        if (membersResponse.ok) {
+          const membersList = await membersResponse.json();
+          setAllMembers(Array.isArray(membersList) ? membersList : membersList.results || []);
+        }
+      }
     } catch (err) {
-      setError(err.message);
+      console.error("Error fetching data:", err);
+      setError(err.message || "Failed to load dashboard");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchRecommendations = async () => {
-    try {
-      setLoadingRecommendations(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/api/ai/recommendations/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRecommendations(data.recommendations || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch recommendations:", err);
-    } finally {
-      setLoadingRecommendations(false);
-    }
-  };
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchData();
+  }, []);
 
   const calculateSummary = (myExpensesList, allTransactions) => {
     const myTotal = myExpensesList.reduce(
@@ -179,7 +183,14 @@ const FamilyMember = () => {
   }
 
   if (loading) {
-    return <div className="member-container loading">Loading your data...</div>;
+    return (
+      <div className="member-container loading">
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <p>Loading your data...</p>
+          <div style={{ marginTop: "20px", fontSize: "24px" }}>⏳</div>
+        </div>
+      </div>
+    );
   }
 
   if (!userProfile) {
@@ -200,7 +211,14 @@ const FamilyMember = () => {
         <p className="role-badge">Role: {userProfile.role?.role_name || "Unknown"}</p>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div className="error-message">
+          <strong>Error:</strong> {error}
+          <button onClick={() => window.location.reload()} style={{ marginTop: "10px", marginLeft: "10px", padding: "8px 16px" }}>
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* AI Recommendations */}
       {recommendations.length > 0 && (

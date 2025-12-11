@@ -223,6 +223,40 @@ class FamilyViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    @action(detail=False, methods=['get'])
+    def my_family(self, request):
+        """Get the authenticated user's family"""
+        if not request.user.family:
+            return Response({'error': 'User is not in a family'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.get_serializer(request.user.family)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def family_members(self, request):
+        """Get members of the authenticated user's family"""
+        if not request.user.family:
+            return Response({'error': 'User is not in a family'}, status=status.HTTP_404_NOT_FOUND)
+        
+        members = User.objects.filter(family=request.user.family)
+        serializer = UserSerializer(members, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def family_transactions(self, request):
+        """Get all transactions for the authenticated user's family"""
+        if not request.user.family:
+            return Response({'error': 'User is not in a family'}, status=status.HTTP_404_NOT_FOUND)
+        
+        family_members = User.objects.filter(family=request.user.family)
+        family_finances = Finance.objects.filter(user__in=family_members)
+        transactions = Transaction.objects.filter(
+            finance__in=family_finances
+        ).select_related('finance', 'category', 'finance__user').order_by('-date')
+        
+        serializer = TransactionSerializer(transactions, many=True)
+        return Response(serializer.data)
+
 class FinanceViewSet(viewsets.ModelViewSet):
     queryset = Finance.objects.all()
     serializer_class = FinanceSerializer
@@ -279,9 +313,81 @@ class FinanceViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """Filter transactions based on user's family or personal transactions"""
+        user = self.request.user
+        
+        # If user has a family, show all family transactions
+        if user.family:
+            family_members = User.objects.filter(family=user.family)
+            family_finances = Finance.objects.filter(user__in=family_members)
+            return Transaction.objects.filter(finance__in=family_finances).select_related('finance', 'category', 'finance__user').order_by('-date')
+        
+        # Otherwise show only personal transactions
+        try:
+            finance = Finance.objects.get(user=user)
+            return Transaction.objects.filter(finance=finance).select_related('finance', 'category', 'finance__user').order_by('-date')
+        except Finance.DoesNotExist:
+            return Transaction.objects.none()
+    
+    def perform_create(self, serializer):
+        """Create a transaction for the authenticated user's finance"""
+        try:
+            finance = Finance.objects.get(user=self.request.user)
+            serializer.save(finance=finance)
+        except Finance.DoesNotExist:
+            return Response({'error': 'Finance profile not found'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'])
+    def by_category(self, request):
+        """Get transactions grouped by category with totals"""
+        transactions = self.get_queryset()
+        
+        category_data = {}
+        for trans in transactions:
+            cat_name = trans.category.category_name if trans.category else 'Uncategorized'
+            if cat_name not in category_data:
+                category_data[cat_name] = {'total': 0, 'count': 0, 'transactions': []}
+            category_data[cat_name]['total'] += float(trans.amount)
+            category_data[cat_name]['count'] += 1
+            category_data[cat_name]['transactions'].append({
+                'id': trans.transaction_id,
+                'amount': float(trans.amount),
+                'date': trans.date,
+                'description': trans.description,
+                'user': trans.finance.user.username,
+            })
+        
+        return Response(category_data)
+    
+    @action(detail=False, methods=['get'])
+    def by_user(self, request):
+        """Get transactions grouped by user (for family view)"""
+        if not request.user.family:
+            return Response({'error': 'User is not in a family'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        transactions = self.get_queryset()
+        
+        user_data = {}
+        for trans in transactions:
+            user = trans.finance.user
+            user_key = user.username
+            if user_key not in user_data:
+                user_data[user_key] = {'total': 0, 'count': 0, 'transactions': []}
+            user_data[user_key]['total'] += float(trans.amount)
+            user_data[user_key]['count'] += 1
+            user_data[user_key]['transactions'].append({
+                'id': trans.transaction_id,
+                'amount': float(trans.amount),
+                'date': trans.date,
+                'category': trans.category.category_name if trans.category else 'Uncategorized',
+                'description': trans.description,
+            })
+        
+        return Response(user_data)
 
 class GoalViewSet(viewsets.ModelViewSet):
     queryset = Goal.objects.all()

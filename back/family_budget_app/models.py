@@ -58,7 +58,11 @@ class Finance(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def update_balance(self):
-        self.balance = self.income - self.expenses
+        from decimal import Decimal
+        # Ensure all values are Decimal for proper arithmetic
+        income = Decimal(str(self.income)) if self.income else Decimal('0')
+        expenses = Decimal(str(self.expenses)) if self.expenses else Decimal('0')
+        self.balance = income - expenses
         self.save()
 
 class Category(models.Model):

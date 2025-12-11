@@ -15,9 +15,17 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/ai-assistant" element={<AIAssistant />} />
+        
+        {/* Main Dashboards */}
         <Route path="/solo" element={<Solo />} />
         <Route path="/family" element={<Family />} />
         <Route path="/family-member/:userId" element={<FamilyMember />} />
+        
+        {/* Backend Redirect Routes (map to actual components) */}
+        <Route path="/admin-dashboard" element={<Family />} />
+        <Route path="/member-dashboard" element={<Family />} />
+        <Route path="/kid-dashboard" element={<Solo />} />
+        <Route path="/solo-dashboard" element={<Solo />} />
       </Routes>
     </BrowserRouter>
   );

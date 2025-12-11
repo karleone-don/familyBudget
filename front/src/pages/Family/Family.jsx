@@ -5,7 +5,6 @@ import "./Family.css";
 const Family = () => {
   const navigate = useNavigate();
   const [familyData, setFamilyData] = useState(null);
-  const [members, setMembers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [summary, setSummary] = useState({
     totalFamilyExpenses: 0,
@@ -17,101 +16,99 @@ const Family = () => {
   const [error, setError] = useState(null);
   const [selectedMember, setSelectedMember] = useState("all");
   const [recommendations, setRecommendations] = useState([]);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
-  useEffect(() => {
-    fetchFamilyData();
-    fetchRecommendations();
-  }, []);
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchFamilyData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = localStorage.getItem("token");
 
-      // Fetch family info
-      const familyResponse = await fetch(`${API_URL}/api/family/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-      });
+      if (!token) {
+        navigate("/login");
+        return;
+      }
 
-      if (!familyResponse.ok) {
-        if (familyResponse.status === 401) {
+      // Fetch all data in parallel
+      const [familyRes, membersRes, transRes, recRes] = await Promise.all([
+        fetch(`${API_URL}/api/families/my_family/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`,
+          },
+        }),
+        fetch(`${API_URL}/api/families/family_members/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`,
+          },
+        }),
+        fetch(`${API_URL}/api/families/family_transactions/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`,
+          },
+        }),
+        fetch(`${API_URL}/api/ai/recommendations/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Token ${token}`,
+          },
+        }),
+      ]);
+
+      if (!familyRes.ok) {
+        if (familyRes.status === 401) {
           navigate("/login");
           return;
         }
-        throw new Error("Failed to fetch family data");
+        throw new Error(`Failed to fetch family data: ${familyRes.status}`);
       }
 
-      const familyInfo = await familyResponse.json();
+      const familyInfo = await familyRes.json();
       setFamilyData(familyInfo);
 
-      // Fetch family members
-      const membersResponse = await fetch(`${API_URL}/api/family-members/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-      });
-
-      if (membersResponse.ok) {
-        const membersList = await membersResponse.json();
-        setMembers(Array.isArray(membersList) ? membersList : membersList.results || []);
+      // Process members
+      let membersData = [];
+      if (membersRes.ok) {
+        const membersList = await membersRes.json();
+        membersData = Array.isArray(membersList) ? membersList : membersList.results || [];
       }
 
-      // Fetch all family transactions
-      const transResponse = await fetch(`${API_URL}/api/family-transactions/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-      });
-
-      if (transResponse.ok) {
-        const transList = await transResponse.json();
+      // Process transactions
+      if (transRes.ok) {
+        const transList = await transRes.json();
         const transactionList = Array.isArray(transList) ? transList : transList.results || [];
         const expensesList = transactionList.filter(
           (t) => t.transaction_type === "expense"
         );
         setExpenses(expensesList);
-        calculateSummary(expensesList, membersList);
+        calculateSummary(expensesList, membersData);
+      }
+
+      // Process recommendations
+      if (recRes.ok) {
+        const recData = await recRes.json();
+        setRecommendations(recData.recommendations || []);
       }
     } catch (err) {
-      setError(err.message);
+      console.error("Error fetching family data:", err);
+      setError(err.message || "Failed to load family dashboard");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchRecommendations = async () => {
-    try {
-      setLoadingRecommendations(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_URL}/api/ai/recommendations/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setRecommendations(data.recommendations || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch recommendations:", err);
-    } finally {
-      setLoadingRecommendations(false);
-    }
-  };
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchFamilyData();
+  }, []);
 
   const calculateSummary = (expensesList, membersList) => {
     const totalExpenses = expensesList.reduce(
@@ -144,7 +141,14 @@ const Family = () => {
       : expenses.filter((exp) => exp.user?.username === selectedMember);
 
   if (loading) {
-    return <div className="family-container loading">Loading family data...</div>;
+    return (
+      <div className="family-container loading">
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          <p>Loading family data...</p>
+          <div style={{ marginTop: "20px", fontSize: "24px" }}>⏳</div>
+        </div>
+      </div>
+    );
   }
 
   if (!familyData) {
@@ -164,7 +168,14 @@ const Family = () => {
         <p>Overall family expenses view</p>
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div className="error-message">
+          <strong>Error:</strong> {error}
+          <button onClick={() => window.location.reload()} style={{ marginTop: "10px", marginLeft: "10px", padding: "8px 16px" }}>
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* AI Recommendations */}
       {recommendations.length > 0 && (
