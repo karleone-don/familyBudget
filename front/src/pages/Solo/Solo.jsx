@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from "recharts";
 import "./Solo.css";
 
 const Solo = () => {
@@ -9,12 +10,49 @@ const Solo = () => {
     total: 0,
     byCategory: {},
     count: 0,
+    byGroup: {},
+    byDay: {},
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+  
+  // Цветовая схема для групп расходов
+  const groupColors = {
+    "Обязательные": "#FF6B6B",
+    "Необязательные": "#4ECDC4",
+    "Накопления": "#45B7D1",
+    "Непредвиденные": "#FFA07A"
+  };
+  
+  // Классификация категорий по группам
+  const categoryGroups = {
+    "Обязательные": ["Housing", "Housing", "Еда", "Food", "Транспорт", "Transport", "Коммунальные", "Utilities"],
+    "Необязательные": ["Развлечения", "Entertainment", "Шоппинг", "Shopping", "Красота", "Beauty"],
+    "Накопления": ["Сбережения", "Savings", "Инвестиции", "Investments"],
+    "Непредвиденные": ["Здоровье", "Healthcare", "Другое", "Other", "Неопределенное", "Uncategorized"]
+  };
+  
+  const getGroupForCategory = (category) => {
+    for (const [group, categories] of Object.entries(categoryGroups)) {
+      if (categories.some(c => c.toLowerCase().includes(category.toLowerCase()) || category.toLowerCase().includes(c.toLowerCase()))) {
+        return group;
+      }
+    }
+    return "Непредвиденные";
+  };
+  
+  const getStatus = (amount, categoryAmount, total) => {
+    const percentage = (categoryAmount / total) * 100;
+    if (percentage > 35) return { emoji: "🔥", text: "Много!" };
+    if (percentage > 25) return { emoji: "⚠️", text: "Выше нормы" };
+    if (percentage < 5) return { emoji: "🎯", text: "Мало" };
+    return { emoji: "✅", text: "Оплачено" };
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -91,20 +129,55 @@ const Solo = () => {
     );
 
     const byCategory = {};
+    const byGroup = {};
+    const byDay = {};
+    
     expensesList.forEach((exp) => {
       const catName = exp.category_name || exp.category?.category_name || "Uncategorized";
       byCategory[catName] = (byCategory[catName] || 0) + parseFloat(exp.amount);
+      
+      // Группировка по группам расходов
+      const group = getGroupForCategory(catName);
+      byGroup[group] = (byGroup[group] || 0) + parseFloat(exp.amount);
+      
+      // Группировка по дням
+      const day = new Date(exp.date).toLocaleDateString('ru-RU');
+      byDay[day] = (byDay[day] || 0) + parseFloat(exp.amount);
     });
 
     setSummary({
       total,
       byCategory,
+      byGroup,
+      byDay,
       count: expensesList.length,
     });
   };
-
-  // Filter by month can be implemented later if needed
-  const filteredExpenses = expenses;
+  
+  // Фильтрация по периоду
+  const getFilteredExpenses = () => {
+    let filtered = expenses;
+    const now = new Date();
+    
+    if (selectedPeriod === "week") {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(exp => new Date(exp.date) >= weekAgo);
+    } else if (selectedPeriod === "month") {
+      filtered = filtered.filter(exp => {
+        const expDate = new Date(exp.date);
+        return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
+      });
+    }
+    
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(exp => {
+        const catName = exp.category_name || exp.category?.category_name || "Uncategorized";
+        return catName === selectedCategory;
+      });
+    }
+    
+    return filtered;
+  };
 
   if (loading) {
     return (
@@ -133,20 +206,131 @@ const Solo = () => {
   return (
     <div className="solo-container">
       <div className="solo-header">
-        <h1>💰 Мои Расходы</h1>
-        <p>Отслеживай свои личные траты</p>
+        <h1>Твои расходы</h1>
+        <p>Отслеживай личные траты и достигай целей</p>
       </div>
 
       {error && (
         <div className="error-message">
-          <strong>Error:</strong> {error}
+          <strong>Ошибка:</strong> {error}
           <button onClick={() => window.location.reload()} style={{ marginTop: "10px", marginLeft: "10px", padding: "8px 16px" }}>
-            Retry
+            Повторить
           </button>
         </div>
       )}
 
-      {/* AI Recommendations */}
+      {/* Фильтры */}
+      <div className="filters-section">
+        <div className="filter-group">
+          <label>Период:</label>
+          <select value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)} className="filter-select">
+            <option value="all">Все время</option>
+            <option value="week">Неделя</option>
+            <option value="month">Месяц</option>
+          </select>
+        </div>
+        
+        <div className="filter-group">
+          <label>Категория:</label>
+          <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="filter-select">
+            <option value="all">Все категории</option>
+            {Object.keys(summary.byCategory).map((cat) => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Кнопки действия */}
+      <div className="action-buttons">
+        <button className="btn btn-primary">➕ Быстрая запись расхода</button>
+        <button className="btn btn-secondary">📊 Полный отчет</button>
+        <button className="btn btn-secondary">🎯 Мои цели</button>
+      </div>
+
+      {/* Диаграммы */}
+      <div className="charts-section">
+        <div className="chart-container">
+          <h3>Расходы по группам</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={Object.entries(summary.byGroup).map(([name, value]) => ({ name, value }))}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={(entry) => `${entry.name}: ₽${entry.value.toFixed(0)} (${((entry.value / summary.total) * 100).toFixed(1)}%)`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {Object.keys(summary.byGroup).map((group) => (
+                  <Cell key={`cell-${group}`} fill={groupColors[group]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => `₽${value.toFixed(2)}`} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-container">
+          <h3>Тренд расходов по дням</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={Object.entries(summary.byDay).slice(-14).map(([day, value]) => ({ name: day, value }))}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+              <YAxis />
+              <Tooltip formatter={(value) => `₽${value.toFixed(2)}`} />
+              <Bar dataKey="value" fill="#667eea" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Таблица расходов */}
+      {summary.total > 0 && (
+        <div className="table-section">
+          <h2>Твоя детальная таблица расходов</h2>
+          <table className="expenses-table">
+            <thead>
+              <tr>
+                <th>Что купил</th>
+                <th>Сумма</th>
+                <th>%</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              {getFilteredExpenses()
+                .reduce((acc, exp) => {
+                  const catName = exp.category_name || exp.category?.category_name || "Uncategorized";
+                  const existing = acc.find(item => item.category === catName);
+                  if (existing) {
+                    existing.amount += parseFloat(exp.amount);
+                  } else {
+                    acc.push({ category: catName, amount: parseFloat(exp.amount) });
+                  }
+                  return acc;
+                }, [])
+                .sort((a, b) => b.amount - a.amount)
+                .map((item) => {
+                  const status = getStatus(item.amount, item.amount, summary.total);
+                  const percentage = ((item.amount / summary.total) * 100).toFixed(1);
+                  return (
+                    <tr key={item.category}>
+                      <td className="category-name">{item.category}</td>
+                      <td className="amount">₽{item.amount.toFixed(2)}</td>
+                      <td className="percentage">{percentage}%</td>
+                      <td className="status"><span className="status-badge">{status.emoji} {status.text}</span></td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* AI Рекомендации */}
       {recommendations.length > 0 && (
         <div className="recommendations-section">
           <h3>💡 Рекомендации от ИИ</h3>
@@ -169,104 +353,7 @@ const Solo = () => {
         </div>
       )}
 
-      {/* Summary Cards */}
-      <div className="summary-section">
-        <div className="summary-card">
-          <div className="card-icon">💰</div>
-          <div className="card-content">
-            <h3>Всего расходов</h3>
-            <p className="card-value">₽{summary.total.toFixed(2)}</p>
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <div className="card-icon">📊</div>
-          <div className="card-content">
-            <h3>Транзакций</h3>
-            <p className="card-value">{summary.count}</p>
-          </div>
-        </div>
-
-        <div className="summary-card">
-          <div className="card-icon">📈</div>
-          <div className="card-content">
-            <h3>Средний расход</h3>
-            <p className="card-value">
-              ₽{summary.count > 0 ? (summary.total / summary.count).toFixed(2) : "0.00"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Category Breakdown */}
-      {Object.keys(summary.byCategory).length > 0 && (
-        <div className="category-section">
-          <h3>📋 Расходы по категориям</h3>
-          <table className="category-table">
-            <thead>
-              <tr>
-                <th>Категория</th>
-                <th>Сумма</th>
-                <th>Доля</th>
-                <th>Процент</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(summary.byCategory)
-                .sort(([, a], [, b]) => b - a)
-                .map(([category, amount]) => {
-                  const percentage = ((amount / summary.total) * 100).toFixed(1);
-                  return (
-                    <tr key={category}>
-                      <td>{category}</td>
-                      <td>₽{amount.toFixed(2)}</td>
-                      <td>
-                        <div className="bar-container">
-                          <div
-                            className="bar-fill"
-                            style={{
-                              width: `${percentage}%`,
-                            }}
-                          ></div>
-                        </div>
-                      </td>
-                      <td>{percentage}%</td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Transactions List */}
-      {filteredExpenses.length > 0 && (
-        <div className="transactions-section">
-          <h3>📝 Детальный список расходов</h3>
-          <table className="transactions-table">
-            <thead>
-              <tr>
-                <th>Дата</th>
-                <th>Описание</th>
-                <th>Категория</th>
-                <th>Сумма</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredExpenses.map((exp) => (
-                <tr key={exp.transaction_id}>
-                  <td>{new Date(exp.date).toLocaleDateString('ru-RU')}</td>
-                  <td>{exp.description || 'N/A'}</td>
-                  <td>{exp.category_name || exp.category?.category_name || 'Без категории'}</td>
-                  <td>₽{parseFloat(exp.amount).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {expenses.length === 0 && (
+      {summary.total === 0 && (
         <div style={{ textAlign: "center", padding: "40px", color: "#999" }}>
           <p>Нет расходов для отображения</p>
           <p>Добавьте первый расход, чтобы начать отслеживание</p>

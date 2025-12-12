@@ -1,23 +1,58 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from "recharts";
 import "./Family.css";
 
 const Family = () => {
   const navigate = useNavigate();
   const [familyData, setFamilyData] = useState(null);
   const [expenses, setExpenses] = useState([]);
+  const [prevMonthExpenses, setPrevMonthExpenses] = useState([]);
   const [summary, setSummary] = useState({
     totalFamilyExpenses: 0,
     memberCount: 0,
-    byMember: {},
     byCategory: {},
+    byGroup: {},
+    byDay: {},
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedMember, setSelectedMember] = useState("all");
   const [recommendations, setRecommendations] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [showCharts, setShowCharts] = useState(true);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
+
+  // Цветовая схема для групп расходов
+  const groupColors = {
+    "Обязательные": "#FF6B6B",
+    "Необязательные": "#4ECDC4",
+    "Накопления": "#45B7D1",
+    "Непредвиденные": "#FFA07A"
+  };
+  
+  // Классификация категорий по группам
+  const categoryGroups = {
+    "Обязательные": ["Housing", "Housing", "Еда", "Food", "Транспорт", "Transport", "Коммунальные", "Utilities"],
+    "Необязательные": ["Развлечения", "Entertainment", "Шоппинг", "Shopping", "Красота", "Beauty"],
+    "Накопления": ["Сбережения", "Savings", "Инвестиции", "Investments"],
+    "Непредвиденные": ["Здоровье", "Healthcare", "Другое", "Other", "Неопределенное", "Uncategorized"]
+  };
+  
+  const getGroupForCategory = (category) => {
+    for (const [group, categories] of Object.entries(categoryGroups)) {
+      if (categories.some(c => c.toLowerCase().includes(category.toLowerCase()) || category.toLowerCase().includes(c.toLowerCase()))) {
+        return group;
+      }
+    }
+    return "Непредвиденные";
+  };
+  
+  const getTrendArrow = (current, previous) => {
+    if (current > previous) return { arrow: "▲", color: "#FF6B6B" };
+    if (current < previous) return { arrow: "▼", color: "#4ECB71" };
+    return { arrow: "→", color: "#999" };
+  };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchFamilyData = async () => {
@@ -32,15 +67,8 @@ const Family = () => {
       }
 
       // Fetch all data in parallel
-      const [familyRes, membersRes, transRes, recRes] = await Promise.all([
+      const [familyRes, transRes, recRes] = await Promise.all([
         fetch(`${API_URL}/api/families/my_family/`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Token ${token}`,
-          },
-        }),
-        fetch(`${API_URL}/api/families/family_members/`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -74,13 +102,6 @@ const Family = () => {
       const familyInfo = await familyRes.json();
       setFamilyData(familyInfo);
 
-      // Process members
-      let membersData = [];
-      if (membersRes.ok) {
-        const membersList = await membersRes.json();
-        membersData = Array.isArray(membersList) ? membersList : membersList.results || [];
-      }
-
       // Process transactions
       if (transRes.ok) {
         const transList = await transRes.json();
@@ -88,8 +109,27 @@ const Family = () => {
         const expensesList = transactionList.filter(
           (t) => t.transaction_type === "expense"
         );
-        setExpenses(expensesList);
-        calculateSummary(expensesList, membersData);
+        
+        // Current month expenses
+        const currentMonth = new Date(selectedMonth);
+        const currentMonthExpenses = expensesList.filter(exp => {
+          const expDate = new Date(exp.date);
+          return expDate.getMonth() === currentMonth.getMonth() && 
+                 expDate.getFullYear() === currentMonth.getFullYear();
+        });
+        
+        // Previous month expenses for trend calculation
+        const prevMonth = new Date(currentMonth);
+        prevMonth.setMonth(prevMonth.getMonth() - 1);
+        const prevMonthExp = expensesList.filter(exp => {
+          const expDate = new Date(exp.date);
+          return expDate.getMonth() === prevMonth.getMonth() && 
+                 expDate.getFullYear() === prevMonth.getFullYear();
+        });
+        
+        setExpenses(currentMonthExpenses);
+        setPrevMonthExpenses(prevMonthExp);
+        calculateSummary(currentMonthExpenses, prevMonthExp);
       }
 
       // Process recommendations
@@ -108,37 +148,53 @@ const Family = () => {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchFamilyData();
-  }, []);
+  }, [selectedMonth]);
 
-  const calculateSummary = (expensesList, membersList) => {
+  const calculateSummary = (expensesList, prevMonthList) => {
     const totalExpenses = expensesList.reduce(
       (sum, exp) => sum + parseFloat(exp.amount),
       0
     );
+    
+    const prevTotal = prevMonthList.reduce(
+      (sum, exp) => sum + parseFloat(exp.amount),
+      0
+    );
 
-    const byMember = {};
     const byCategory = {};
+    const byGroup = {};
+    const byDay = {};
 
     expensesList.forEach((exp) => {
-      const memberName = exp.user?.username || "Unknown";
-      byMember[memberName] = (byMember[memberName] || 0) + parseFloat(exp.amount);
-
       const catName = exp.category?.category_name || "Uncategorized";
       byCategory[catName] = (byCategory[catName] || 0) + parseFloat(exp.amount);
+      
+      // Группировка по группам расходов
+      const group = getGroupForCategory(catName);
+      byGroup[group] = (byGroup[group] || 0) + parseFloat(exp.amount);
+      
+      // Группировка по дням
+      const day = new Date(exp.date).toLocaleDateString('ru-RU');
+      byDay[day] = (byDay[day] || 0) + parseFloat(exp.amount);
+    });
+    
+    // Calculate previous month by category for trends
+    const prevByCategory = {};
+    prevMonthList.forEach((exp) => {
+      const catName = exp.category?.category_name || "Uncategorized";
+      prevByCategory[catName] = (prevByCategory[catName] || 0) + parseFloat(exp.amount);
     });
 
     setSummary({
       totalFamilyExpenses: totalExpenses,
-      memberCount: membersList?.length || 0,
-      byMember,
+      prevTotalExpenses: prevTotal,
+      memberCount: 0,
       byCategory,
+      prevByCategory,
+      byGroup,
+      byDay,
     });
   };
-
-  const filteredExpenses =
-    selectedMember === "all"
-      ? expenses
-      : expenses.filter((exp) => exp.user?.username === selectedMember);
 
   if (loading) {
     return (
@@ -164,23 +220,136 @@ const Family = () => {
   return (
     <div className="family-container">
       <div className="family-header">
-        <h1>👨‍👩‍👧‍👦 {familyData.family_name || "Family Budget"}</h1>
-        <p>Overall family expenses view</p>
+        <h1>Итого расходов</h1>
+        <p>Совместный бюджет семьи: {familyData?.family_name || "Family Budget"}</p>
       </div>
 
       {error && (
         <div className="error-message">
-          <strong>Error:</strong> {error}
+          <strong>Ошибка:</strong> {error}
           <button onClick={() => window.location.reload()} style={{ marginTop: "10px", marginLeft: "10px", padding: "8px 16px" }}>
-            Retry
+            Повторить
           </button>
         </div>
       )}
 
-      {/* AI Recommendations */}
+      {/* Фильтры */}
+      <div className="filters-section">
+        <div className="filter-group">
+          <label>Месяц:</label>
+          <input 
+            type="month" 
+            value={selectedMonth} 
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="filter-input"
+          />
+        </div>
+        
+        <div className="filter-group checkbox">
+          <input 
+            type="checkbox" 
+            id="showCharts"
+            checked={showCharts} 
+            onChange={(e) => setShowCharts(e.target.checked)}
+          />
+          <label htmlFor="showCharts">Показать графики</label>
+        </div>
+      </div>
+
+      {/* Кнопки действия */}
+      <div className="action-buttons">
+        <button className="btn btn-primary">Добавить расход</button>
+        <button className="btn btn-secondary">Экспорт в Excel</button>
+        <button className="btn btn-secondary">Настроить категории</button>
+      </div>
+
+      {/* Диаграммы */}
+      {showCharts && (
+        <div className="charts-section">
+          <div className="chart-container">
+            <h3>Расходы по группам</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={Object.entries(summary.byGroup).map(([name, value]) => ({ name, value }))}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={(entry) => `${entry.name}: ₽${entry.value.toFixed(0)} (${((entry.value / summary.totalFamilyExpenses) * 100).toFixed(1)}%)`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {Object.keys(summary.byGroup).map((group) => (
+                    <Cell key={`cell-${group}`} fill={groupColors[group]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => `₽${value.toFixed(2)}`} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="chart-container">
+            <h3>Тренд расходов по дням</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={Object.entries(summary.byDay).map(([day, value]) => ({ name: day, value }))}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                <YAxis />
+                <Tooltip formatter={(value) => `₽${value.toFixed(2)}`} />
+                <Bar dataKey="value" fill="#667eea" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Таблица расходов */}
+      {summary.totalFamilyExpenses > 0 && (
+        <div className="table-section">
+          <h2>Таблица расходов по категориям</h2>
+          <table className="expenses-table">
+            <thead>
+              <tr>
+                <th>Категория</th>
+                <th>Сумма</th>
+                <th>%</th>
+                <th>Тренд</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(summary.byCategory)
+                .sort(([, a], [, b]) => b - a)
+                .map(([category, currentAmount]) => {
+                  const previousAmount = summary.prevByCategory[category] || 0;
+                  const trend = getTrendArrow(currentAmount, previousAmount);
+                  const percentChange = previousAmount > 0 
+                    ? Math.abs(((currentAmount - previousAmount) / previousAmount) * 100).toFixed(1)
+                    : 0;
+                  const percentage = ((currentAmount / summary.totalFamilyExpenses) * 100).toFixed(1);
+                  
+                  return (
+                    <tr key={category}>
+                      <td className="category-name">{category}</td>
+                      <td className="amount">₽{currentAmount.toFixed(2)}</td>
+                      <td className="percentage">{percentage}%</td>
+                      <td className="trend">
+                        <span className="trend-badge" style={{ color: trend.color }}>
+                          {trend.arrow} {percentChange}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* AI Рекомендации */}
       {recommendations.length > 0 && (
         <div className="recommendations-section">
-          <h3>💡 Family Budget Recommendations</h3>
+          <h3>💡 Рекомендации для семейного бюджета</h3>
           <div className="recommendations-list">
             {recommendations.slice(0, 3).map((rec, idx) => (
               <div key={idx} className={`recommendation-card priority-${rec.priority}`}>
@@ -191,7 +360,7 @@ const Family = () => {
                 <p className="recommendation-description">{rec.description}</p>
                 {rec.potential_savings > 0 && (
                   <p className="potential-savings">
-                    💰 Potential savings: ${rec.potential_savings.toFixed(2)}
+                    💰 Возможная экономия: ₽{rec.potential_savings.toFixed(2)}
                   </p>
                 )}
               </div>
@@ -200,133 +369,12 @@ const Family = () => {
         </div>
       )}
 
-      {/* Summary Cards */}
-      <div className="family-summary">
-        <div className="summary-card total">
-          <div className="card-icon">💰</div>
-          <div className="card-content">
-            <h3>Total Family Expenses</h3>
-            <p className="card-value">${summary.totalFamilyExpenses.toFixed(2)}</p>
-          </div>
-        </div>
-
-        <div className="summary-card members">
-          <div className="card-icon">👥</div>
-          <div className="card-content">
-            <h3>Family Members</h3>
-            <p className="card-value">{summary.memberCount}</p>
-          </div>
-        </div>
-
-        <div className="summary-card average">
-          <div className="card-icon">📊</div>
-          <div className="card-content">
-            <h3>Average Per Member</h3>
-            <p className="card-value">
-              ${summary.memberCount > 0 ? (summary.totalFamilyExpenses / summary.memberCount).toFixed(2) : "0.00"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Member Breakdown */}
-      {Object.keys(summary.byMember).length > 0 && (
-        <div className="member-breakdown">
-          <h3>By Member</h3>
-          <div className="member-list">
-            {Object.entries(summary.byMember)
-              .sort(([, a], [, b]) => b - a)
-              .map(([member, amount]) => (
-                <div key={member} className="member-item">
-                  <span className="member-name">👤 {member}</span>
-                  <span className="member-amount">${amount.toFixed(2)}</span>
-                  <div className="member-bar">
-                    <div
-                      className="member-fill"
-                      style={{
-                        width: `${(amount / summary.totalFamilyExpenses) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-          </div>
+      {summary.totalFamilyExpenses === 0 && (
+        <div style={{ textAlign: "center", padding: "40px", color: "#999" }}>
+          <p>Нет расходов для отображения</p>
+          <p>Добавьте расход, чтобы начать отслеживание семейного бюджета</p>
         </div>
       )}
-
-      {/* Category Breakdown */}
-      {Object.keys(summary.byCategory).length > 0 && (
-        <div className="category-breakdown">
-          <h3>By Category</h3>
-          <div className="category-list">
-            {Object.entries(summary.byCategory)
-              .sort(([, a], [, b]) => b - a)
-              .map(([category, amount]) => (
-                <div key={category} className="category-item">
-                  <span className="category-name">{category}</span>
-                  <span className="category-amount">${amount.toFixed(2)}</span>
-                  <div className="category-bar">
-                    <div
-                      className="category-fill"
-                      style={{
-                        width: `${(amount / summary.totalFamilyExpenses) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* Filter by Member */}
-      <div className="filter-section">
-        <label>Filter by Member:</label>
-        <select
-          value={selectedMember}
-          onChange={(e) => setSelectedMember(e.target.value)}
-          className="filter-select"
-        >
-          <option value="all">All Members</option>
-          {Object.keys(summary.byMember).map((member) => (
-            <option key={member} value={member}>
-              {member}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Transactions List */}
-      <div className="transactions-section">
-        <h3>Family Transactions</h3>
-        {filteredExpenses.length === 0 ? (
-          <div className="no-data">
-            <p>No family expenses found</p>
-          </div>
-        ) : (
-          <div className="transactions-list">
-            {filteredExpenses.map((expense) => (
-              <div key={expense.transaction_id} className="transaction-item">
-                <div className="transaction-info">
-                  <h4>{expense.description || "Transaction"}</h4>
-                  <p className="transaction-meta">
-                    <span className="member-tag">{expense.user?.username}</span>
-                    <span className="category-tag">
-                      {expense.category?.category_name || "Uncategorized"}
-                    </span>
-                  </p>
-                  <p className="transaction-date">
-                    {new Date(expense.date).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="transaction-amount">
-                  ${parseFloat(expense.amount).toFixed(2)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 };
