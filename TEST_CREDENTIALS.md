@@ -4,38 +4,56 @@
 
 Below are the test users available in the application. Use these credentials to log in.
 
-### Admin User (Full Family Access)
-- **Email:** admin1@example.com
-- **Password:** admin123
+### TestFamily - Family Users (Shared Budget)
+- **Admin Email:** admin@testfamily.com
+- **Admin Password:** admin123
 - **Role:** Admin
 - **Family:** TestFamily
 
-### Family Member
-- **Email:** member1@example.com
-- **Password:** member123
+- **Member Email:** member@testfamily.com
+- **Member Password:** member123
 - **Role:** Family Member
 - **Family:** TestFamily
 
-### Kid User
-- **Email:** kid1@example.com
-- **Password:** kid123
+- **Kid Email:** kid@testfamily.com
+- **Kid Password:** kid123
 - **Role:** Kid
 - **Family:** TestFamily
 
-### Solo User (Personal Budget Only)
+### Solo Users (Personal Budget Only)
+
+#### Admin User
+- **Email:** admin1@example.com
+- **Password:** admin123
+- **Role:** Admin
+
+#### Family Member
+- **Email:** member1@example.com
+- **Password:** member123
+- **Role:** Family Member
+
+#### Kid User
+- **Email:** kid1@example.com
+- **Password:** kid123
+- **Role:** Kid
+
+#### Solo User
 - **Email:** solo@example.com
 - **Password:** solo123
 - **Role:** Solo
 
-### Additional Test Users
+#### Additional Test Users
 - **Email:** zhaks@email.com
 - **Password:** password123
+- **Role:** Solo
 
 - **Email:** qq@email.com
 - **Password:** password123
+- **Role:** Solo
 
 - **Email:** test@example.com
 - **Password:** password123
+- **Role:** Solo
 
 ## How to Login
 
@@ -43,9 +61,22 @@ Below are the test users available in the application. Use these credentials to 
 2. Click "Login" button
 3. Enter your email and password from the list above
 4. You'll be redirected to your respective dashboard:
-   - **Admin/Family Members:** Family Budget Dashboard
+   - **Admin/Family Members:** Family Budget Dashboard (TestFamily)
    - **Solo User:** Personal Budget Dashboard
-   - **Kid:** Limited Family Budget View
+   - **Kid:** Limited Family Budget View (TestFamily)
+
+## User Type Differences
+
+### TestFamily Users
+- All members of the same family (TestFamily)
+- Can see each other's transactions
+- Share budget information
+- Can add expenses for the family
+
+### Solo Users
+- Independent users
+- Can only see their own transactions
+- Personal budget tracking only
 
 ## Creating New Test Users (Backend Only)
 
@@ -74,3 +105,12 @@ user = User.objects.create_user(
 user.role = solo_role
 user.save()
 ```
+
+## Troubleshooting Login Issues
+
+If you get "Invalid email or password":
+
+1. Make sure you're using the exact email and password from this list
+2. Check that the backend server is running (`python manage.py runserver`)
+3. Verify the REACT_APP_API_URL environment variable is set to `http://localhost:8000`
+4. Check browser console for network errors
