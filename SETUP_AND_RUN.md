@@ -292,12 +292,49 @@ Then open browser: **http://localhost:3000**
 
 ---
 
+## 🔐 Test Credentials
+
+Use the following credentials to login to the application:
+
+### Family (Admin Access)
+- **Email:** admin1@example.com
+- **Password:** admin123
+
+### Family Member
+- **Email:** member1@example.com
+- **Password:** member123
+
+### Kid (Family Access)
+- **Email:** kid1@example.com
+- **Password:** kid123
+
+### Solo User (Personal Budget)
+- **Email:** solo@example.com
+- **Password:** solo123
+
+### Additional Test Users
+- **Email:** zhaks@email.com  
+  **Password:** password123
+
+- **Email:** qq@email.com  
+  **Password:** password123
+
+- **Email:** test@example.com  
+  **Password:** password123
+
+Each user type has access to different dashboards:
+- **Admin/Family Members:** Full Family Budget Dashboard with all members' data
+- **Kid:** Limited family view with transaction tracking
+- **Solo:** Personal Budget Dashboard with personal expenses only
+
+---
+
 ## 🎯 Next Steps
 
 1. ✅ Start backend server
 2. ✅ Start frontend server
 3. ✅ Open http://localhost:3000 in browser
-4. ✅ Login with test credentials
+4. ✅ Login with test credentials (see section above)
 5. ✅ Explore Solo/Family dashboards
 6. ✅ Check AI recommendations
 
