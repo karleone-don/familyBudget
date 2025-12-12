@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ResponsiveContainer } from "recharts";
 import "./Family.css";
 
 // Modal для добавления расхода в семейный бюджет
@@ -74,7 +74,6 @@ const Family = () => {
   const navigate = useNavigate();
   const [familyData, setFamilyData] = useState(null);
   const [expenses, setExpenses] = useState([]);
-  const [prevMonthExpenses, setPrevMonthExpenses] = useState([]);
   const [summary, setSummary] = useState({
     totalFamilyExpenses: 0,
     memberCount: 0,
@@ -190,15 +189,9 @@ const Family = () => {
         // Previous month expenses for trend calculation
         const prevMonth = new Date(currentMonth);
         prevMonth.setMonth(prevMonth.getMonth() - 1);
-        const prevMonthExp = expensesList.filter(exp => {
-          const expDate = new Date(exp.date);
-          return expDate.getMonth() === prevMonth.getMonth() && 
-                 expDate.getFullYear() === prevMonth.getFullYear();
-        });
         
         setExpenses(currentMonthExpenses);
-        setPrevMonthExpenses(prevMonthExp);
-        calculateSummary(currentMonthExpenses, prevMonthExp);
+        calculateSummary(currentMonthExpenses);
       }
 
       // Process recommendations
@@ -219,13 +212,8 @@ const Family = () => {
     fetchFamilyData();
   }, [selectedMonth]);
 
-  const calculateSummary = (expensesList, prevMonthList) => {
+  const calculateSummary = (expensesList) => {
     const totalExpenses = expensesList.reduce(
-      (sum, exp) => sum + parseFloat(exp.amount),
-      0
-    );
-    
-    const prevTotal = prevMonthList.reduce(
       (sum, exp) => sum + parseFloat(exp.amount),
       0
     );
@@ -246,20 +234,11 @@ const Family = () => {
       const day = new Date(exp.date).toLocaleDateString('ru-RU');
       byDay[day] = (byDay[day] || 0) + parseFloat(exp.amount);
     });
-    
-    // Calculate previous month by category for trends
-    const prevByCategory = {};
-    prevMonthList.forEach((exp) => {
-      const catName = exp.category?.category_name || "Uncategorized";
-      prevByCategory[catName] = (prevByCategory[catName] || 0) + parseFloat(exp.amount);
-    });
 
     setSummary({
       totalFamilyExpenses: totalExpenses,
-      prevTotalExpenses: prevTotal,
       memberCount: 0,
       byCategory,
-      prevByCategory,
       byGroup,
       byDay,
     });
