@@ -3,6 +3,73 @@ import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from "recharts";
 import "./Solo.css";
 
+// Modal для быстрой записи расхода
+const QuickExpenseModal = ({ isOpen, onClose, onSubmit, categories }) => {
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (description && amount && category) {
+      onSubmit({ description, amount: parseFloat(amount), category });
+      setDescription("");
+      setAmount("");
+      setCategory("");
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>➕ Быстрая запись расхода</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Описание:</label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Что вы купили?"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Сумма (₽):</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Категория:</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} required>
+              <option value="">Выберите категорию</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div className="modal-buttons">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Отмена</button>
+            <button type="submit" className="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const Solo = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState([]);
@@ -18,6 +85,8 @@ const Solo = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [showQuickExpenseModal, setShowQuickExpenseModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
   
@@ -179,6 +248,75 @@ const Solo = () => {
     return filtered;
   };
 
+  // Функция добавления расхода через API
+  const handleAddExpense = async (expenseData) => {
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${API_URL}/api/transactions/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify({
+          description: expenseData.description,
+          amount: expenseData.amount,
+          category_name: expenseData.category,
+          transaction_type: "expense",
+          date: new Date().toISOString().split('T')[0],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to add expense: ${response.status}`);
+      }
+
+      // Обновляем список расходов
+      await fetchExpenses();
+      setShowQuickExpenseModal(false);
+    } catch (err) {
+      console.error("Error adding expense:", err);
+      setError("Ошибка при добавлении расхода: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Функция для экспорта в PDF/отчет
+  const handleGenerateReport = () => {
+    const reportContent = `
+ОТЧЕТ О РАСХОДАХ
+================
+Период: ${selectedPeriod === 'week' ? 'Последние 7 дней' : selectedPeriod === 'month' ? 'Текущий месяц' : 'Все время'}
+Всего расходов: ₽${summary.total.toFixed(2)}
+Количество транзакций: ${summary.count}
+
+РАСХОДЫ ПО КАТЕГОРИЯМ:
+${Object.entries(summary.byCategory)
+  .sort(([, a], [, b]) => b - a)
+  .map(([cat, amount]) => `${cat}: ₽${amount.toFixed(2)}`)
+  .join('\n')}
+
+РАСХОДЫ ПО ГРУППАМ:
+${Object.entries(summary.byGroup)
+  .sort(([, a], [, b]) => b - a)
+  .map(([group, amount]) => `${group}: ₽${amount.toFixed(2)} (${((amount / summary.total) * 100).toFixed(1)}%)`)
+  .join('\n')}
+    `;
+    
+    const blob = new Blob([reportContent], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `отчет-расходов-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   if (loading) {
     return (
       <div className="solo-container loading">
@@ -243,10 +381,29 @@ const Solo = () => {
 
       {/* Кнопки действия */}
       <div className="action-buttons">
-        <button className="btn btn-primary">➕ Быстрая запись расхода</button>
-        <button className="btn btn-secondary">📊 Полный отчет</button>
+        <button 
+          className="btn btn-primary"
+          onClick={() => setShowQuickExpenseModal(true)}
+          disabled={submitting}
+        >
+          ➕ Быстрая запись расхода
+        </button>
+        <button 
+          className="btn btn-secondary"
+          onClick={handleGenerateReport}
+        >
+          📊 Полный отчет
+        </button>
         <button className="btn btn-secondary">🎯 Мои цели</button>
       </div>
+
+      {/* Модальное окно для быстрой записи расхода */}
+      <QuickExpenseModal
+        isOpen={showQuickExpenseModal}
+        onClose={() => setShowQuickExpenseModal(false)}
+        onSubmit={handleAddExpense}
+        categories={Object.keys(summary.byCategory).length > 0 ? Object.keys(summary.byCategory) : ["Food", "Transport", "Entertainment"]}
+      />
 
       {/* Диаграммы */}
       <div className="charts-section">

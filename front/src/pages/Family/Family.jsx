@@ -3,6 +3,73 @@ import { useNavigate } from "react-router-dom";
 import { PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from "recharts";
 import "./Family.css";
 
+// Modal для добавления расхода в семейный бюджет
+const AddExpenseModal = ({ isOpen, onClose, onSubmit, categories }) => {
+  const [description, setDescription] = useState("");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (description && amount && category) {
+      onSubmit({ description, amount: parseFloat(amount), category });
+      setDescription("");
+      setAmount("");
+      setCategory("");
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Добавить расход</h2>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Описание:</label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Описание расхода"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Сумма (₽):</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Категория:</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} required>
+              <option value="">Выберите категорию</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div className="modal-buttons">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Отмена</button>
+            <button type="submit" className="btn btn-primary">Добавить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const Family = () => {
   const navigate = useNavigate();
   const [familyData, setFamilyData] = useState(null);
@@ -20,6 +87,8 @@ const Family = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [showCharts, setShowCharts] = useState(true);
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -196,6 +265,67 @@ const Family = () => {
     });
   };
 
+  // Функция добавления расхода через API
+  const handleAddExpense = async (expenseData) => {
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${API_URL}/api/transactions/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify({
+          description: expenseData.description,
+          amount: expenseData.amount,
+          category_name: expenseData.category,
+          transaction_type: "expense",
+          date: new Date().toISOString().split('T')[0],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to add expense: ${response.status}`);
+      }
+
+      // Обновляем список расходов
+      await fetchFamilyData();
+      setShowAddExpenseModal(false);
+    } catch (err) {
+      console.error("Error adding expense:", err);
+      setError("Ошибка при добавлении расхода: " + err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Функция для экспорта в Excel
+  const handleExportToExcel = () => {
+    const rows = [
+      ["Дата", "Описание", "Категория", "Сумма", "Пользователь"],
+      ...expenses.map(exp => [
+        exp.date,
+        exp.description,
+        exp.category?.category_name || "Uncategorized",
+        exp.amount,
+        exp.user?.username || "Unknown"
+      ])
+    ];
+
+    const csv = rows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `семейный-бюджет-${selectedMonth}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   if (loading) {
     return (
       <div className="family-container loading">
@@ -258,10 +388,29 @@ const Family = () => {
 
       {/* Кнопки действия */}
       <div className="action-buttons">
-        <button className="btn btn-primary">Добавить расход</button>
-        <button className="btn btn-secondary">Экспорт в Excel</button>
+        <button 
+          className="btn btn-primary"
+          onClick={() => setShowAddExpenseModal(true)}
+          disabled={submitting}
+        >
+          Добавить расход
+        </button>
+        <button 
+          className="btn btn-secondary"
+          onClick={handleExportToExcel}
+        >
+          Экспорт в Excel
+        </button>
         <button className="btn btn-secondary">Настроить категории</button>
       </div>
+
+      {/* Модальное окно для добавления расхода */}
+      <AddExpenseModal
+        isOpen={showAddExpenseModal}
+        onClose={() => setShowAddExpenseModal(false)}
+        onSubmit={handleAddExpense}
+        categories={Object.keys(summary.byCategory).length > 0 ? Object.keys(summary.byCategory) : ["Food", "Transport", "Entertainment"]}
+      />
 
       {/* Диаграммы */}
       {showCharts && (
