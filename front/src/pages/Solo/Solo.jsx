@@ -412,7 +412,9 @@ ${Object.entries(summary.byGroup)
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={Object.entries(summary.byGroup).map(([name, value]) => ({ name, value }))}
+                data={(summary.byGroup && Object.entries(summary.byGroup).length > 0)
+                  ? Object.entries(summary.byGroup).map(([name, value]) => ({ name, value }))
+                  : []}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -421,7 +423,7 @@ ${Object.entries(summary.byGroup)
                 fill="#8884d8"
                 dataKey="value"
               >
-                {Object.keys(summary.byGroup).map((group) => (
+                {summary.byGroup && Object.keys(summary.byGroup).map((group) => (
                   <Cell key={`cell-${group}`} fill={groupColors[group]} />
                 ))}
               </Pie>
@@ -433,7 +435,9 @@ ${Object.entries(summary.byGroup)
         <div className="chart-container">
           <h3>Тренд расходов по дням</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={Object.entries(summary.byDay).slice(-14).map(([day, value]) => ({ name: day, value }))}>
+            <BarChart data={(summary.byDay && Object.entries(summary.byDay).length > 0)
+              ? Object.entries(summary.byDay).slice(-14).map(([day, value]) => ({ name: day, value }))
+              : []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
               <YAxis />
