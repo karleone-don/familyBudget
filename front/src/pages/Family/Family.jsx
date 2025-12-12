@@ -115,12 +115,6 @@ const Family = () => {
     }
     return "Непредвиденные";
   };
-  
-  const getTrendArrow = (current, previous) => {
-    if (current > previous) return { arrow: "▲", color: "#FF6B6B" };
-    if (current < previous) return { arrow: "▼", color: "#4ECB71" };
-    return { arrow: "→", color: "#999" };
-  };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchFamilyData = async () => {
@@ -399,7 +393,9 @@ const Family = () => {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={Object.entries(summary.byGroup).map(([name, value]) => ({ name, value }))}
+                  data={(summary.byGroup && Object.entries(summary.byGroup).length > 0) 
+                    ? Object.entries(summary.byGroup).map(([name, value]) => ({ name, value }))
+                    : []}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -408,7 +404,7 @@ const Family = () => {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {Object.keys(summary.byGroup).map((group) => (
+                  {summary.byGroup && Object.keys(summary.byGroup).map((group) => (
                     <Cell key={`cell-${group}`} fill={groupColors[group]} />
                   ))}
                 </Pie>
@@ -420,7 +416,9 @@ const Family = () => {
           <div className="chart-container">
             <h3>Тренд расходов по дням</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={Object.entries(summary.byDay).map(([day, value]) => ({ name: day, value }))}>
+              <BarChart data={(summary.byDay && Object.entries(summary.byDay).length > 0)
+                ? Object.entries(summary.byDay).map(([day, value]) => ({ name: day, value }))
+                : []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
                 <YAxis />
@@ -446,29 +444,34 @@ const Family = () => {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(summary.byCategory)
-                .sort(([, a], [, b]) => b - a)
-                .map(([category, currentAmount]) => {
-                  const previousAmount = summary.prevByCategory[category] || 0;
-                  const trend = getTrendArrow(currentAmount, previousAmount);
-                  const percentChange = previousAmount > 0 
-                    ? Math.abs(((currentAmount - previousAmount) / previousAmount) * 100).toFixed(1)
-                    : 0;
-                  const percentage = ((currentAmount / summary.totalFamilyExpenses) * 100).toFixed(1);
-                  
-                  return (
-                    <tr key={category}>
-                      <td className="category-name">{category}</td>
-                      <td className="amount">₽{currentAmount.toFixed(2)}</td>
-                      <td className="percentage">{percentage}%</td>
-                      <td className="trend">
-                        <span className="trend-badge" style={{ color: trend.color }}>
-                          {trend.arrow} {percentChange}%
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+              {summary.byCategory && Object.entries(summary.byCategory).length > 0 ? (
+                Object.entries(summary.byCategory)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([category, currentAmount]) => {
+                    const trend = { arrow: "→", color: "#999" };
+                    const percentChange = 0;
+                    const percentage = ((currentAmount / summary.totalFamilyExpenses) * 100).toFixed(1);
+                    
+                    return (
+                      <tr key={category}>
+                        <td className="category-name">{category}</td>
+                        <td className="amount">₽{currentAmount.toFixed(2)}</td>
+                        <td className="percentage">{percentage}%</td>
+                        <td className="trend">
+                          <span className="trend-badge" style={{ color: trend.color }}>
+                            {trend.arrow} {percentChange}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+              ) : (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: "center", padding: "20px" }}>
+                    Нет данных о расходах
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
