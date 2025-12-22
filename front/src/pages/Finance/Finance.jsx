@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import TransactionModal from "./TransactionModal";
+import { useTranslation } from 'react-i18next';
 import "./Finance.css";
 import "./Modal.css";
 
@@ -23,6 +24,7 @@ export default function FinanceTracker() {
   });
 
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const token = localStorage.getItem("token");
 
   // Стабильная вспомогательная функция для даты
@@ -129,7 +131,7 @@ export default function FinanceTracker() {
     });
   };
 
-  if (loading) return <p className="loader">Loading...</p>;
+  if (loading) return <p className="loader">{t("Loading...")}</p>;
   if (error) return <p className="error">{error}</p>;
 
   // Группировка для рендера
@@ -142,8 +144,8 @@ export default function FinanceTracker() {
     const tDate = new Date(t.date);
     const tTime = new Date(tDate.getFullYear(), tDate.getMonth(), tDate.getDate()).getTime();
     let groupName;
-    if (tTime === today) groupName = "Today";
-    else if (tTime >= startOfWeek) groupName = "Last week";
+    if (tTime === today) groupName = t("Today");
+    else if (tTime >= startOfWeek) groupName = t("Last week");
     else groupName = tDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
     if (!grouped[groupName]) grouped[groupName] = [];

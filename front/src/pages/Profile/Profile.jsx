@@ -3,6 +3,7 @@ import defaultAvatar from "../../assets/profile.png";
 import { useNavigate } from "react-router-dom";
 import { updateProfileApi, fetchInvitationsApi } from "../../api/auth.js";
 import InvitationsModal from "../../components/InvitationsModal/InvitationsModal.jsx";
+import { useTranslation } from 'react-i18next';
 import './Profile.css';
 
 const API_URL = "http://127.0.0.1:8000";
@@ -16,11 +17,12 @@ export default function ProfilePage() {
   const [invitationsCount, setInvitationsCount] = useState(0);
   const [showInvitationsModal, setShowInvitationsModal] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     if (!token) {
-      setError("Нет токена. Пользователь не авторизован.");
+      setError(t("Нет токена. Пользователь не авторизован."));
       return;
     }
 
@@ -30,7 +32,7 @@ export default function ProfilePage() {
       },
     })
       .then(res => {
-        if (!res.ok) throw new Error("Ошибка загрузки профиля");
+        if (!res.ok) throw new Error(t("Ошибка загрузки профиля"));
         return res.json();
       })
       .then(data => {
@@ -71,7 +73,7 @@ export default function ProfilePage() {
       setIsEditing(false);
       setError(null);
     } catch (err) {
-      setError("Ошибка при сохранении профиля: " + err.message);
+      setError(t("Ошибка при сохранении профиля: ") + err.message);
     } finally {
       setIsSaving(false);
     }
@@ -83,7 +85,7 @@ export default function ProfilePage() {
   };
 
   if (error) return <p style={{ color: "red" }}>{error}</p>;
-  if (!profile) return <p>Загрузка профиля...</p>;
+  if (!profile) return <p>{t("Загрузка профиля...")}</p>;
 
   const avatarUrl = profile.avatar
     ? `${API_URL}${profile.avatar}`
@@ -100,21 +102,21 @@ export default function ProfilePage() {
                 type="text"
                 value={editedProfile.username || ""}
                 onChange={(e) => handleEditChange("username", e.target.value)}
-                placeholder="Имя пользователя"
+                placeholder={t("Имя пользователя")}
                 className="edit-input"
               />
               <input
                 type="email"
                 value={editedProfile.email || ""}
                 onChange={(e) => handleEditChange("email", e.target.value)}
-                placeholder="Email"
+                placeholder={t("Email")}
                 className="edit-input"
               />
               <input
                 type="number"
                 value={editedProfile.age || ""}
                 onChange={(e) => handleEditChange("age", e.target.value)}
-                placeholder="Возраст"
+                placeholder={t("Возраст")}
                 className="edit-input"
               />
               <div className="edit-buttons">
@@ -123,14 +125,14 @@ export default function ProfilePage() {
                   onClick={handleSave}
                   disabled={isSaving}
                 >
-                  {isSaving ? "Сохранение..." : "Сохранить"}
+                  {isSaving ? t("Сохранение...") : t("Сохранить")}
                 </button>
                 <button
                   className="cancel-btn"
                   onClick={handleCancel}
                   disabled={isSaving}
                 >
-                  Отмена
+                  {t("Отмена")}
                 </button>
               </div>
             </div>
@@ -147,18 +149,18 @@ export default function ProfilePage() {
                             className="view-family-btn" 
                             onClick={() => navigate("/family-members", { state: { familyId: profile.family } })}
                         >
-                            Family
+                            {t("Family")}
                         </button>
                     </div>
                 ) : (
                     // Если семьи нет, показываем кнопку поиска
                     <div className="family-active">
-                        <span className="family-name">No family</span>
+                        <span className="family-name">{t("No family")}</span>
                         <button 
                             className="find-family-btn" 
                             onClick={() => navigate("/family-search")}
                         >
-                            Find family
+                            {t("Find family")}
                         </button>
                     </div>
                 )}
@@ -172,15 +174,15 @@ export default function ProfilePage() {
                       className="invitations-btn" 
                       onClick={() => setShowInvitationsModal(true)}
                     >
-                      Invitations {invitationsCount > 0 && `(${invitationsCount})`}
+                      {t("Invitations")} {invitationsCount > 0 && `(${invitationsCount})`}
                     </button>
                     <button className="change-data-btn" onClick={() => setIsEditing(true)}>
-                      Change Data
+                      {t("Change Data")}
                     </button>
                   </>
                 )}
                 <button className="finance-tracker-btn" onClick={() => navigate("/finance")}>
-                  Finance tracker
+                  {t("Finance tracker")}
                 </button>
               </div>
             </>

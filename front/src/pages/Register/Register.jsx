@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerApi, saveToken } from "../../api/auth";
+import { useTranslation } from 'react-i18next';
 import "./Register.css";
 
 export default function Register() {
@@ -10,6 +11,7 @@ export default function Register() {
   const [password2, setPassword2] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -55,7 +57,7 @@ export default function Register() {
 
       <form className="register-form" onSubmit={handleSubmit}>
         <div>
-          <label>Email</label>
+          <label>{t("Email")}</label>
           <input 
             type="email" 
             value={email} 
@@ -66,7 +68,7 @@ export default function Register() {
         </div>
 
         <div>
-          <label>username</label>
+          <label>{t("username")}</label>
           <input 
             value={username} 
             onChange={(e) => setUsername(e.target.value)} 
@@ -76,9 +78,9 @@ export default function Register() {
         </div>
 
         <div>
-          <label>password</label>
+          <label>{t("password")}</label>
           <input 
-            type="password" 
+            type="password"
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
             required 
@@ -87,7 +89,7 @@ export default function Register() {
         </div>
 
         <div>
-          <label>password confirm</label>
+          <label>{t("password confirm")}</label>
           <input 
             type="password" 
             value={password2} 
@@ -101,11 +103,11 @@ export default function Register() {
 
         <div>
           <button type="submit" disabled={loading}>
-            {loading ? "Signing up..." : "Sign up"}
+            {loading ? t("Signing up...") : t("Sign up")}
           </button>
 
           <div className="register-links">
-            <Link to="/login" className="link">Log in</Link>
+            <Link to="/login" className="link">{t("Log in")}</Link>
           </div>
         </div>
       </form>

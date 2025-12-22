@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginApi, saveToken } from "../../api/auth";
+import { useTranslation } from 'react-i18next';
 import "./Login.css";
 
 export default function Login() {
@@ -8,6 +9,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { t } = useTranslation();
 
   const navigate = useNavigate();
 
@@ -41,7 +43,7 @@ export default function Login() {
     <div className="login-page">
       <form className="login-form" onSubmit={handleSubmit}>
         <div>
-          <label>E-mail</label>
+          <label>{t("E-mail")}</label>
           <input
             type="email"
             value={email}
@@ -52,7 +54,7 @@ export default function Login() {
         </div>
 
         <div>
-          <label>Password</label>
+          <label>{t("Password")}</label>
           <input
             type="password"
             value={password}
@@ -66,15 +68,15 @@ export default function Login() {
 
         <div>
           <button type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? t("Signing in...") : t("Sign in")}
           </button>
           <div className="links">
-            <Link to="/register" className="link">Join now</Link>
+            <Link to="/register" className="link">{t("Join now")}</Link>
           </div>
         </div>
       </form>
 
-      
+
     </div>
   );
 }
