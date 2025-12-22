@@ -10,6 +10,7 @@ import FamilySearchPage from "./pages/FamilySearch/FamilySearch";
 import CreateFamilyPage from "./pages/CreateFamily/CreateFamily";
 import FamilyMembersPage from "./pages/Family/Family";
 import FamilyDashboard from "./pages/FamilyDashboard/FamilyDashboard";
+import AddMemberPage from "./pages/AddMember/AddMember";
 import Navbar from "./components/Navbar/Navbar";
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
         <Route path="/family-search" element={<FamilySearchPage />} />
         <Route path="/family/create" element={<CreateFamilyPage />} />
         <Route path="/family-members" element={<FamilyMembersPage />} />
+        <Route path="/add-member" element={<AddMemberPage />} />
         <Route path="/family-dashboard" element={<FamilyDashboard />} />
         <Route path="*" element={<ProfilePage />} />
       </Routes>

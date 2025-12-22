@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import defaultAvatar from "../../assets/profile.png";
 import "./Family.css"; 
@@ -46,6 +46,10 @@ export default function FamilyMembersPage() {
         .then(res => res.json())
         .then(setMyUser);
     }, [token, familyId, navigate]);
+
+    // Проверки доступа
+    const isFamilyAdmin = familyData?.admin?.user_id === myUser?.user_id;
+    const isChild = myUser?.role_name === 'kid'; // согласно твоему бэкенду 'kid'
 
     // Fetch pending invitations for this family (admin only)
     const fetchPendingInvites = () => {
@@ -134,10 +138,6 @@ export default function FamilyMembersPage() {
             }
         });
     };
-
-    // Проверки доступа
-    const isFamilyAdmin = familyData?.admin?.user_id === myUser?.user_id;
-    const isChild = myUser?.role_name === 'kid'; // согласно твоему бэкенду 'kid'
 
     return (
         <div className="family-page">
@@ -231,7 +231,7 @@ export default function FamilyMembersPage() {
                 <div className="bottom-actions">
                     {isFamilyAdmin && (
                         <>
-                            <button className="add-member-btn" onClick={() => navigate("/family-search", { state: { familyId } })}>
+                            <button className="add-member-btn" onClick={() => navigate("/add-member", { state: { familyId } })}>
                                 Add Member
                             </button>
                             <button 

@@ -11,12 +11,6 @@ export default function Navbar() {
     const [user, setUser] = useState(null);
     const [showMenu, setShowMenu] = useState(false);
 
-    // Hide navbar on login, register, and main pages
-    const hiddenPages = ["/", "/login", "/register"];
-    if (hiddenPages.includes(location.pathname) || !token) {
-        return null;
-    }
-
     useEffect(() => {
         if (token) {
             fetch(`${API_URL}/api/users/profile/`, {
@@ -28,8 +22,15 @@ export default function Navbar() {
         }
     }, [token]);
 
+    // Hide navbar on login, register, and main pages
+    const hiddenPages = ["/", "/login", "/register"];
+    if (hiddenPages.includes(location.pathname) || !token) {
+        return null;
+    }
+
     const handleLogout = () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("user");
         navigate("/login");
     };
 

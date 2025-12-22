@@ -1,4 +1,3 @@
-import React from "react";
 import "./Modal.css";
 
 export default function TransactionModal({ isOpen, onClose, onSubmit, onDelete, formData, setFormData, categories }) {

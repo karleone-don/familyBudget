@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import transaction
-from .models import User, Family, Finance, Transaction, Goal, Role, Category, Invitation
+from .models import User, Family, Finance, Transaction, Goal, Role, Category, Invitation, JoinRequest
 from .serializers import *
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import permission_classes
@@ -267,7 +267,7 @@ class FamilyViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def join_request(self, request):
-        """User sends a join request to a family"""
+        """User sends a join request to a family (admin must approve)"""
         family_id = request.data.get('family_id')
         if not family_id:
             return Response({'error': 'family_id is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -277,13 +277,32 @@ class FamilyViewSet(viewsets.ModelViewSet):
         except Family.DoesNotExist:
             return Response({'error': 'Family not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Create a join request by directly adding the user to the family
-        request.user.family = family
-        member_role = Role.objects.get(role_name='family_member')
-        request.user.role = member_role
-        request.user.save()
+        # Check if user already has a pending request
+        existing_request = JoinRequest.objects.filter(
+            family=family,
+            user=request.user,
+            status='pending'
+        ).first()
         
-        return Response({'message': f'Successfully joined {family.family_name}'}, status=status.HTTP_200_OK)
+        if existing_request:
+            return Response({'message': 'Join request already sent and pending approval'}, status=status.HTTP_200_OK)
+        
+        # Check if user already in family
+        if request.user.family == family:
+            return Response({'error': 'You are already a member of this family'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create a pending join request
+        join_req = JoinRequest.objects.create(
+            family=family,
+            user=request.user,
+            status='pending'
+        )
+        
+        serializer = JoinRequestSerializer(join_req)
+        return Response({
+            'message': 'Join request sent successfully. Waiting for admin approval.',
+            'join_request': serializer.data
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'])
     def invites(self, request):
@@ -320,6 +339,82 @@ class FamilyViewSet(viewsets.ModelViewSet):
         invitation.save()
         
         return Response({'message': f'Successfully joined {invitation.family.family_name}'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def pending_join_requests(self, request, pk=None):
+        """Get all pending join requests for a family (admin only)"""
+        family = self.get_object()
+        if request.user != family.admin:
+            return Response({'error': 'Only admin can view pending join requests'}, status=status.HTTP_403_FORBIDDEN)
+        
+        pending = JoinRequest.objects.filter(family=family, status='pending')
+        serializer = JoinRequestSerializer(pending, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def approve_join_request(self, request, pk=None):
+        """Admin approves a join request"""
+        family = self.get_object()
+        if request.user != family.admin:
+            return Response({'error': 'Only admin can approve join requests'}, status=status.HTTP_403_FORBIDDEN)
+        
+        join_request_id = request.data.get('join_request_id')
+        if not join_request_id:
+            return Response({'error': 'join_request_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            join_req = JoinRequest.objects.get(join_request_id=join_request_id, family=family, status='pending')
+        except JoinRequest.DoesNotExist:
+            return Response({'error': 'Join request not found or already processed'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Add user to family
+        user = join_req.user
+        user.family = family
+        member_role = Role.objects.get(role_name='family_member')
+        user.role = member_role
+        user.save()
+        
+        # Mark request as approved
+        from django.utils import timezone
+        join_req.status = 'approved'
+        join_req.decided_at = timezone.now()
+        join_req.decided_by = request.user
+        join_req.save()
+        
+        serializer = JoinRequestSerializer(join_req)
+        return Response({
+            'message': f'Join request from {user.username} approved',
+            'join_request': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def reject_join_request(self, request, pk=None):
+        """Admin rejects a join request"""
+        family = self.get_object()
+        if request.user != family.admin:
+            return Response({'error': 'Only admin can reject join requests'}, status=status.HTTP_403_FORBIDDEN)
+        
+        join_request_id = request.data.get('join_request_id')
+        if not join_request_id:
+            return Response({'error': 'join_request_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            join_req = JoinRequest.objects.get(join_request_id=join_request_id, family=family, status='pending')
+        except JoinRequest.DoesNotExist:
+            return Response({'error': 'Join request not found or already processed'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Mark request as rejected
+        from django.utils import timezone
+        join_req.status = 'rejected'
+        join_req.decided_at = timezone.now()
+        join_req.decided_by = request.user
+        join_req.save()
+        
+        serializer = JoinRequestSerializer(join_req)
+        return Response({
+            'message': f'Join request from {join_req.user.username} rejected',
+            'join_request': serializer.data
+        }, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
     def pending_invites(self, request, pk=None):
@@ -527,12 +622,17 @@ class AIRecommendationsView(APIView):
 
     def post(self, request):
         """Generate AI recommendations based on user's financial data"""
+        print(f"\n[AI RECOMMENDATIONS] Request received from user: {request.user.email if request.user else 'Anonymous'}")
         try:
             # Get user's finance data
             user = request.user
+            print(f"[AI RECOMMENDATIONS] User: {user.username} ({user.email})")
+            
             try:
                 finance = Finance.objects.get(user=user)
+                print(f"[AI RECOMMENDATIONS] Finance found: Balance={finance.balance}, Income={finance.income}, Expenses={finance.expenses}")
             except Finance.DoesNotExist:
+                print(f"[AI RECOMMENDATIONS] ERROR: No finance data found for user {user.email}")
                 return Response(
                     {'error': 'No finance data found for user'},
                     status=status.HTTP_404_NOT_FOUND
@@ -542,11 +642,13 @@ class AIRecommendationsView(APIView):
             transactions = Transaction.objects.filter(
                 finance=finance
             ).order_by('-date')[:50]  # Last 50 transactions
+            print(f"[AI RECOMMENDATIONS] Found {len(transactions)} transactions")
 
             # Build context for AI analysis - evaluate querysets before filtering
             transactions_list = list(transactions)  # Convert to list before filtering
             expense_transactions = [t for t in transactions_list if t.type == 'expense']
             income_transactions = [t for t in transactions_list if t.type == 'income']
+            print(f"[AI RECOMMENDATIONS] Expense transactions: {len(expense_transactions)}, Income transactions: {len(income_transactions)}")
 
             # Group expenses by category
             expense_by_category = {}
@@ -555,6 +657,8 @@ class AIRecommendationsView(APIView):
                 if category_name not in expense_by_category:
                     expense_by_category[category_name] = 0
                 expense_by_category[category_name] += float(trans.amount)
+
+            print(f"[AI RECOMMENDATIONS] Expense categories: {list(expense_by_category.keys())}")
 
             # Create comprehensive prompt
             prompt = f"""You are a professional financial advisor. Analyze the following financial data and provide specific, actionable recommendations.
@@ -598,6 +702,10 @@ Please be specific with numbers and percentages where relevant. Format your resp
                 balance_f = float(finance.balance)
                 income_f = float(finance.income)
                 expenses_f = float(finance.expenses)
+                
+                # Calculate financial health metrics safely
+                income_to_expense_ratio = f"{(income_f / expenses_f):.2f}x" if expenses_f > 0 else "N/A"
+                savings_rate = f"{((income_f - expenses_f) / income_f * 100):.1f}%" if income_f > 0 else "N/A"
                 
                 recommendations = f"""# Financial Recommendations for {user.username}
 
@@ -657,11 +765,12 @@ Based on your spending analysis, here are the categories consuming the most of y
 ---
 
 **Your Current Financial Health Score**: 
-- Income to Expense Ratio: {(income_f / expenses_f):.2f}x
-- Savings Rate: {((income_f - expenses_f) / income_f * 100):.1f}%
+- Income to Expense Ratio: {income_to_expense_ratio}
+- Savings Rate: {savings_rate}
 
 Keep building on these recommendations! 💪"""
 
+            print(f"[AI RECOMMENDATIONS] Response generated successfully")
             return Response({
                 'recommendations': recommendations,
                 'finance_summary': {
@@ -675,13 +784,9 @@ Keep building on these recommendations! 💪"""
         except Exception as e:
             import traceback
             error_msg = str(e)
-            print(f"DEBUG: AI Recommendations Error: {error_msg}")
-            print(f"DEBUG: Traceback: {traceback.format_exc()}")
-            
-            return Response(
-                {'error': f'Failed to generate recommendations: {error_msg}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            tb = traceback.format_exc()
+            print(f"[AI RECOMMENDATIONS] ERROR: {error_msg}")
+            print(f"[AI RECOMMENDATIONS] Traceback:\n{tb}")
             
             # Try to provide a fallback response for protobuf issues
             if "Metaclasses with custom tp_new" in error_msg or "tp_new" in error_msg:

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginApi, saveToken } from "../../api/auth";
 import "./Login.css";
@@ -66,7 +66,7 @@ export default function Login() {
 
         <div>
           <button type="submit" disabled={loading}>
-            {loading ? "Sign ining..." : "Sign in"}
+            {loading ? "Signing in..." : "Sign in"}
           </button>
           <div className="links">
             <Link to="/register" className="link">Join now</Link>

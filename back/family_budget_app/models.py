@@ -156,6 +156,27 @@ class Invitation(models.Model):
     def __str__(self):
         return f"Invite {self.invited_email} to {self.family.family_name}"
 
+class JoinRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    join_request_id = models.AutoField(primary_key=True)
+    family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name='join_requests')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='join_requests')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(default=timezone.now)
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_join_requests')
+    
+    class Meta:
+        unique_together = ('family', 'user')
+    
+    def __str__(self):
+        return f"{self.user.username} requested to join {self.family.family_name} ({self.status})"
+
 class Goal(models.Model):
     goal_id = models.AutoField(primary_key=True)
     family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name='goals')

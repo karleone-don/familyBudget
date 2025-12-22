@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, 
@@ -156,7 +156,6 @@ export default function AnalyticsPage() {
                 const { cx, cy, payload } = props;
                 return payload.isPrediction ? null : <circle cx={cx} cy={cy} r={6} fill="#7D88EC" stroke="#fff" strokeWidth={2} />;
               }}
-              strokeDasharray={(v) => v?.isPrediction ? "10 10" : "0"} 
             />
           </LineChart>
         </ResponsiveContainer>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "./FamilySearch.css";
 
@@ -66,13 +66,13 @@ export default function FamilySearchPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.message) {
-          setMessage("Request sent successfully!");
+          setMessage("✓ Join request sent! Waiting for admin approval...");
           setFamilies([]);
           setSearchQuery("");
           setHasSearched(false);
-          setTimeout(() => navigate("/family"), 1500);
+          setTimeout(() => navigate("/family-members"), 2500);
         } else {
-          setMessage("Error sending request");
+          setMessage(data.error || "Error sending request");
         }
       })
       .catch(() => {
@@ -96,7 +96,7 @@ export default function FamilySearchPage() {
         if (data.message) {
           setMessage("Invitation accepted!");
           fetchInvites();
-          setTimeout(() => navigate("/family"), 1500);
+          setTimeout(() => navigate("/family-members"), 1500);
         } else {
           setMessage("Error accepting invitation");
         }

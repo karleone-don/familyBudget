@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, Family, Role, Finance, Transaction, Category, Goal, Invitation
+from .models import User, Family, Role, Finance, Transaction, Category, Goal, Invitation, JoinRequest
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -122,3 +122,15 @@ class InvitationSerializer(serializers.ModelSerializer):
         model = Invitation
         fields = ['invitation_id', 'id', 'family', 'family_name', 'invited_email', 'invited_by', 'token', 'accepted', 'created_at']
         read_only_fields = ['token', 'created_at', 'invitation_id']
+
+class JoinRequestSerializer(serializers.ModelSerializer):
+    family_name = serializers.CharField(source='family.family_name', read_only=True)
+    user_username = serializers.CharField(source='user.username', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    decided_by_username = serializers.CharField(source='decided_by.username', read_only=True, allow_null=True)
+
+    class Meta:
+        model = JoinRequest
+        fields = ['join_request_id', 'family', 'family_name', 'user', 'user_username', 'user_email', 
+                  'status', 'created_at', 'decided_at', 'decided_by', 'decided_by_username']
+        read_only_fields = ['join_request_id', 'created_at', 'decided_at', 'decided_by']

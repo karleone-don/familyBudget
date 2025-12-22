@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerApi, saveToken } from "../../api/auth";
 import "./Register.css";
@@ -101,7 +101,7 @@ export default function Register() {
 
         <div>
           <button type="submit" disabled={loading}>
-            {loading ? "Sign uping..." : "Sign up"}
+            {loading ? "Signing up..." : "Sign up"}
           </button>
 
           <div className="register-links">

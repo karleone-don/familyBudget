@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { getAIRecommendations } from '../../api/ai';
 import './AIRecommendations.css';
 
@@ -25,8 +25,9 @@ const AIRecommendations = () => {
       setFinanceSummary(response.finance_summary);
       setGenerated(true);
     } catch (err) {
-      setError(`Failed to generate recommendations: ${err.message}`);
-      console.error('Error:', err);
+      const errorMessage = err.message || 'Unknown error occurred';
+      console.error('Full error:', err);
+      setError(`Failed to generate recommendations: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -126,11 +127,13 @@ const AIRecommendations = () => {
                     line.startsWith('###')
                   ) {
                     const level = line.match(/^#+/)[0].length;
-                    return React.createElement(
-                      `h${level + 1}`,
-                      { key: index, className: 'recommendation-heading' },
-                      line.replace(/^#+\s/, '')
-                    );
+                    if (level === 1) {
+                      return <h2 key={index} className='recommendation-heading'>{line.replace(/^#+\s/, '')}</h2>;
+                    } else if (level === 2) {
+                      return <h3 key={index} className='recommendation-heading'>{line.replace(/^#+\s/, '')}</h3>;
+                    } else {
+                      return <h4 key={index} className='recommendation-heading'>{line.replace(/^#+\s/, '')}</h4>;
+                    }
                   }
                   if (line.startsWith('-') || line.startsWith('•')) {
                     return (

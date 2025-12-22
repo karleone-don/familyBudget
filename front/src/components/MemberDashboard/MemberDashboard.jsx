@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./MemberDashboard.css";
 
 const API_URL = "http://127.0.0.1:8000";
