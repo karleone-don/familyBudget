@@ -1,0 +1,326 @@
+.ai-recommendations-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.ai-header {
+  text-align: center;
+  color: white;
+  margin-bottom: 40px;
+  animation: fadeIn 0.6s ease-in;
+}
+
+.ai-header h1 {
+  font-size: 3em;
+  margin: 0;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ai-header p {
+  font-size: 1.2em;
+  margin-top: 10px;
+  opacity: 0.95;
+}
+
+.ai-intro {
+  max-width: 800px;
+  margin: 0 auto 40px;
+}
+
+.intro-card {
+  background: white;
+  border-radius: 15px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.6s ease-out;
+}
+
+.intro-card h2 {
+  color: #333;
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+.intro-card p {
+  color: #666;
+  font-size: 1.1em;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.intro-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 30px 0;
+}
+
+.intro-card li {
+  color: #555;
+  padding: 12px 0;
+  font-size: 1.05em;
+  line-height: 1.6;
+}
+
+.intro-card li:before {
+  margin-right: 10px;
+}
+
+.btn-generate,
+.btn-regenerate {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  font-size: 1.1em;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  margin-top: 20px;
+}
+
+.btn-generate:hover:not(:disabled),
+.btn-regenerate:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.btn-generate:disabled,
+.btn-regenerate:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.finance-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: 40px auto;
+  margin-bottom: 40px;
+}
+
+.summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  animation: slideUp 0.6s ease-out;
+}
+
+.summary-label {
+  color: #999;
+  font-size: 0.9em;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.summary-value {
+  font-size: 2em;
+  font-weight: 700;
+  color: #333;
+}
+
+.summary-value.positive {
+  color: #27ae60;
+}
+
+.summary-value.negative {
+  color: #e74c3c;
+}
+
+.expense-breakdown {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 1000px;
+  margin: 40px auto;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.6s ease-out;
+}
+
+.expense-breakdown h3 {
+  color: #333;
+  margin-top: 0;
+  font-size: 1.5em;
+  margin-bottom: 25px;
+}
+
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+  transition: all 0.3s ease;
+}
+
+.breakdown-item:hover {
+  background: #eef2ff;
+  transform: translateX(5px);
+}
+
+.category-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.05em;
+}
+
+.category-amount {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+.recommendations-content {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  max-width: 1000px;
+  margin: 40px auto;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.6s ease-out;
+}
+
+.recommendations-text {
+  color: #333;
+  line-height: 1.8;
+  font-size: 1.05em;
+}
+
+.recommendation-heading {
+  color: #667eea;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 10px;
+}
+
+.recommendation-heading:first-child {
+  margin-top: 0;
+}
+
+.recommendation-item {
+  list-style: none;
+  padding: 12px 0 12px 25px;
+  position: relative;
+  color: #555;
+  line-height: 1.7;
+}
+
+.recommendation-item:before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #667eea;
+  font-weight: bold;
+}
+
+.recommendation-text {
+  color: #666;
+  margin: 15px 0;
+  line-height: 1.7;
+}
+
+.ai-actions {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.error-message {
+  background: #e74c3c;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  max-width: 600px;
+  margin: 20px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideDown 0.4s ease-out;
+}
+
+.error-message button {
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.error-message button:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .ai-header h1 {
+    font-size: 2em;
+  }
+
+  .intro-card {
+    padding: 25px;
+  }
+
+  .recommendations-content {
+    padding: 20px;
+  }
+
+  .finance-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .error-message {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}

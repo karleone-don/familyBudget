@@ -5,6 +5,7 @@ import Register from "./pages/Register/Register";
 import ProfilePage from "./pages/Profile/Profile";
 import FinanceTracker from "./pages/Finance/Finance";
 import AnalyticsPage from "./pages/Analytics/Analytics";
+import AIRecommendations from "./pages/AIRecommendations/AIRecommendations";
 
 function App() {
   return (
@@ -16,9 +17,9 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/finance" element={<FinanceTracker />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/ai-recommendations" element={<AIRecommendations />} />
+        <Route path="/solo-dashboard" element={<ProfilePage />} />
         <Route path="*" element={<ProfilePage />} />
-        
-
       </Routes>
     </BrowserRouter>
   );

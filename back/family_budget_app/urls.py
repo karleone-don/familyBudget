@@ -13,4 +13,5 @@ router.register(r'categories', CategoryViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('ai/recommendations/', AIRecommendationsView.as_view(), name='ai-recommendations'),
 ]
