@@ -117,11 +117,12 @@ class GoalSerializer(serializers.ModelSerializer):
 
 class InvitationSerializer(serializers.ModelSerializer):
     family_name = serializers.CharField(source='family.family_name', read_only=True)
+    invited_by_name = serializers.CharField(source='invited_by.username', read_only=True)
 
     class Meta:
         model = Invitation
-        fields = ['invitation_id', 'id', 'family', 'family_name', 'invited_email', 'invited_by', 'token', 'accepted', 'created_at']
-        read_only_fields = ['token', 'created_at', 'invitation_id']
+        fields = ['invitation_id', 'family', 'family_name', 'invited_email', 'invited_by', 'invited_by_name', 'token', 'accepted', 'created_at']
+        read_only_fields = ['token', 'created_at', 'invitation_id', 'invited_by_name']
 
 class JoinRequestSerializer(serializers.ModelSerializer):
     family_name = serializers.CharField(source='family.family_name', read_only=True)

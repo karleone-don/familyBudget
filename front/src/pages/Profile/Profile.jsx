@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import defaultAvatar from "../../assets/profile.png";
 import { useNavigate } from "react-router-dom";
-import { updateProfileApi } from "../../api/auth.js";
+import { updateProfileApi, fetchInvitationsApi } from "../../api/auth.js";
+import InvitationsModal from "../../components/InvitationsModal/InvitationsModal.jsx";
 import './Profile.css';
 
 const API_URL = "http://127.0.0.1:8000";
@@ -12,6 +13,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [invitationsCount, setInvitationsCount] = useState(0);
+  const [showInvitationsModal, setShowInvitationsModal] = useState(false);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -35,6 +38,16 @@ export default function ProfilePage() {
         setEditedProfile(data);
       })
       .catch(err => setError(err.message));
+
+    // Fetch invitations count
+    fetchInvitationsApi()
+      .then(invitations => {
+        setInvitationsCount(invitations.length);
+      })
+      .catch(err => {
+        // Silently handle error for invitations count
+        console.log("Could not fetch invitations:", err);
+      });
   }, [token]);
 
   const handleEditChange = (field, value) => {
@@ -154,9 +167,17 @@ export default function ProfilePage() {
               <div className="email">{profile.email}</div>
               <div className="buttons">
                 {!isEditing && (
-                  <button className="change-data-btn" onClick={() => setIsEditing(true)}>
-                    Change Data
-                  </button>
+                  <>
+                    <button 
+                      className="invitations-btn" 
+                      onClick={() => setShowInvitationsModal(true)}
+                    >
+                      Invitations {invitationsCount > 0 && `(${invitationsCount})`}
+                    </button>
+                    <button className="change-data-btn" onClick={() => setIsEditing(true)}>
+                      Change Data
+                    </button>
+                  </>
                 )}
                 <button className="finance-tracker-btn" onClick={() => navigate("/finance")}>
                   Finance tracker
@@ -166,6 +187,11 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+      <InvitationsModal
+        isOpen={showInvitationsModal}
+        onClose={() => setShowInvitationsModal(false)}
+        token={token}
+      />
     </div>
   );
 }

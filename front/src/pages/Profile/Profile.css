@@ -128,6 +128,15 @@ button:hover {
   cursor: not-allowed;
 }
 
+.invitations-btn {
+  background: #2196F3;
+  transition: background 0.3s ease;
+}
+
+.invitations-btn:hover {
+  background: #1976D2;
+}
+
 
 
 /* Адаптив для экранов меньше 600px */

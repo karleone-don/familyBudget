@@ -98,6 +98,63 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         return Response(UserSerializer(user).data)
 
+    @action(detail=False, methods=['get'])
+    def invites(self, request):
+        """Get all pending invitations for the current user"""
+        user_email = request.user.email
+        invitations = Invitation.objects.filter(invited_email__iexact=user_email, accepted=False)
+        serializer = InvitationSerializer(invitations, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def accept_invitation(self, request):
+        """Accept a pending invitation"""
+        invitation_id = request.data.get('invitation_id')
+        if not invitation_id:
+            return Response({'error': 'invitation_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            invitation = Invitation.objects.get(invitation_id=invitation_id, accepted=False)
+        except Invitation.DoesNotExist:
+            return Response({'error': 'Invitation not found or already accepted'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if invitation is for this user
+        if request.user.email.lower() != invitation.invited_email.lower():
+            return Response({'error': 'This invitation is not for your account'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Add user to family
+        request.user.family = invitation.family
+        member_role = Role.objects.get(role_name='family_member')
+        request.user.role = member_role
+        request.user.save()
+        
+        # Mark invitation as accepted
+        invitation.accepted = True
+        invitation.save()
+        
+        return Response({'message': f'Successfully joined {invitation.family.family_name}'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def decline_invitation(self, request):
+        """Decline a pending invitation"""
+        invitation_id = request.data.get('invitation_id')
+        if not invitation_id:
+            return Response({'error': 'invitation_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            invitation = Invitation.objects.get(invitation_id=invitation_id, accepted=False)
+        except Invitation.DoesNotExist:
+            return Response({'error': 'Invitation not found or already accepted'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if invitation is for this user
+        if request.user.email.lower() != invitation.invited_email.lower():
+            return Response({'error': 'This invitation is not for your account'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Delete the invitation
+        invitation.delete()
+        
+        return Response({'message': 'Invitation declined successfully'}, status=status.HTTP_200_OK)
+
 class FamilyViewSet(viewsets.ModelViewSet):
     queryset = Family.objects.all()
     serializer_class = FamilySerializer
@@ -303,42 +360,6 @@ class FamilyViewSet(viewsets.ModelViewSet):
             'message': 'Join request sent successfully. Waiting for admin approval.',
             'join_request': serializer.data
         }, status=status.HTTP_201_CREATED)
-
-    @action(detail=False, methods=['get'])
-    def invites(self, request):
-        """Get all pending invitations for the current user"""
-        user_email = request.user.email
-        invitations = Invitation.objects.filter(invited_email__iexact=user_email, accepted=False)
-        serializer = InvitationSerializer(invitations, many=True)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['post'])
-    def accept_invitation(self, request):
-        """Accept a pending invitation"""
-        invitation_id = request.data.get('invitation_id')
-        if not invitation_id:
-            return Response({'error': 'invitation_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            invitation = Invitation.objects.get(id=invitation_id, accepted=False)
-        except Invitation.DoesNotExist:
-            return Response({'error': 'Invitation not found or already accepted'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Check if invitation is for this user
-        if request.user.email.lower() != invitation.invited_email.lower():
-            return Response({'error': 'This invitation is not for your account'}, status=status.HTTP_403_FORBIDDEN)
-        
-        # Add user to family
-        request.user.family = invitation.family
-        member_role = Role.objects.get(role_name='family_member')
-        request.user.role = member_role
-        request.user.save()
-        
-        # Mark invitation as accepted
-        invitation.accepted = True
-        invitation.save()
-        
-        return Response({'message': f'Successfully joined {invitation.family.family_name}'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
     def pending_join_requests(self, request, pk=None):
