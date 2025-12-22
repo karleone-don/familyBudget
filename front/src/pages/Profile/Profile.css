@@ -1,0 +1,96 @@
+* {
+    font-family: 'Inika', sans-serif;
+}
+
+.profile-container {
+  padding: 100px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.profile-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 50px;
+}
+
+.avatar {
+  width: 15rem;
+  height: 15rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.username {
+  font-size: 3rem;
+  margin-top: 40px;
+}
+
+.family-row {
+  display: flex;
+  align-items: center;
+  gap: 100px;
+  font-size: 2rem;
+  min-width: 30rem;
+}
+
+button {
+  padding: 8px 20px;
+  border-radius: 50px;
+  min-width: 10rem;
+  background: #000000;
+  color: #D6EFD7;
+  font-size: 1.3rem;
+  font-family: "Imprima", sans-serif;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #222222;
+}
+
+.age {
+    font-size: 1.7rem;
+}
+
+.email {
+  margin-top: 15px;
+  color: #000000;
+  font-size: 2.5rem;
+}
+
+.buttons {
+  margin-top: 35px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+
+
+/* Адаптив для экранов меньше 600px */
+@media (max-width: 800px) {
+  .profile-main {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile-info {
+    align-items: center;
+  }
+
+  .family-row {
+    justify-content: center;
+  }
+
+  .find-family-btn {
+    width: auto;
+  }
+}

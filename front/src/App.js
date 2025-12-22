@@ -2,6 +2,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Main from "./pages/Main/Main";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
+import ProfilePage from "./pages/Profile/Profile";
+import FinanceTracker from "./pages/Finance/Finance";
+import AnalyticsPage from "./pages/Analytics/Analytics";
 
 function App() {
   return (
@@ -10,6 +13,12 @@ function App() {
         <Route path="/" element={<Main />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/finance" element={<FinanceTracker />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="*" element={<ProfilePage />} />
+        
+
       </Routes>
     </BrowserRouter>
   );

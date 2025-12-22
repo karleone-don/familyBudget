@@ -1,53 +1,142 @@
+/* ===== Page ===== */
 .register-page {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  background: #f3f4f6;
+  height: 95vh;
+  font-family: 'Imprima', sans-serif;
 }
 
-.register-title {
-  margin-bottom: 20px;
-  font-size: 24px;
-}
-
+/* ===== Form ===== */
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 250px;
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  gap: 30px;
+  width: 600px;
+  max-width: 90%;
 }
 
+/* ===== Rows (label + input) ===== */
+.register-form > div {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ===== Labels ===== */
+.register-form label {
+  width: 120px;
+  font-size: 2rem;
+  color: #000000;
+  font-family: "Imprima", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* центрируем текст лейблов */
+  flex-shrink: 0;
+}
+
+/* ===== Inputs ===== */
 .register-form input {
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+  flex: 1;
+  padding: 16px 20px;
+  border: 4px solid #000000;
+  border-radius: 50px;
+  background: white;
+  outline: none;
+  transition: all 0.3s;
+  font-size: 2rem;
+  font-family: "Inika", sans-serif;
+  color: #111111;
 }
 
+.register-form input::placeholder {
+  color: #c0c0c0;
+  opacity: 1;
+  font-size: 2rem;
+  font-family: "Inika", sans-serif;
+}
+
+.register-form input:focus::placeholder {
+  color: transparent;
+}
+
+/* ===== Button ===== */
 .register-form button {
-  background: #16a34a;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
+  width: 40%;
+  border-radius: 50px;
+  padding: 8px 0;
+  background: #000000;
+  color: #D6EFD7;
+  font-size: 1.3rem;
+  font-family: "Imprima", sans-serif;
   cursor: pointer;
+  transition: all 0.3s;
+  align-self: center; /* центр кнопки */
 }
 
 .register-form button:hover {
-  background: #15803d;
+  background: #222222;
 }
 
+.register-form button:disabled {
+  background: #555555;
+  cursor: not-allowed;
+}
+
+/* ===== Error ===== */
 .error {
-  color: red;
+  color: #ef4444;
   font-size: 14px;
+  text-align: center;
+  margin-top: -10px;
 }
 
-.success {
-  color: green;
-  font-size: 14px;
+/* ===== Links ===== */
+.register-links {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  font-size: 2rem;
+  font-family: "Inika", sans-serif;
+}
+
+.register-links .link,
+.register-links .link:visited {
+  color: #7D88EC;
+  margin-left: 15px;
+}
+
+.register-links .link:hover {
+  color: #5b65d1;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 640px) {
+  .register-form {
+    width: 100%;
+    gap: 20px;
+  }
+
+  .register-form > div {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .register-form label {
+    width: auto;
+    justify-content: flex-start;
+    font-size: 1.5rem;
+  }
+
+  .register-form input {
+    font-size: 1.5rem;
+  }
+
+  .register-links {
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+  }
 }

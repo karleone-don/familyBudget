@@ -9,6 +9,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 def _role_to_redirect(role_name: str):
@@ -62,11 +63,24 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     @action(detail=False, methods=['get'])
     def profile(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'])
+    def upload_avatar(self, request):
+        user = request.user
+        avatar = request.FILES.get('avatar')
+
+        if not avatar:
+            return Response({'error': 'No file'}, status=400)
+
+        user.avatar = avatar
+        user.save()
+        return Response(UserSerializer(user).data)
 
 class FamilyViewSet(viewsets.ModelViewSet):
     queryset = Family.objects.all()
@@ -283,8 +297,24 @@ class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    def get_queryset(self):
+        user = self.request.user
+        target_user_id = self.request.query_params.get('user_id')
+
+        # Если в URL передан ?user_id=5
+        if target_user_id:
+            # Тут можно добавить проверку: в одной ли они семье?
+            return Transaction.objects.filter(finance__user_id=target_user_id).order_by('-date')
+        
+        # По умолчанию отдаем только свои
+        return Transaction.objects.filter(finance__user=user).order_by('-date')
 
 class GoalViewSet(viewsets.ModelViewSet):
     queryset = Goal.objects.all()
     serializer_class = GoalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated]

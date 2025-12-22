@@ -4,11 +4,12 @@ import "./Main.css";
 export default function Main() {
   return (
     <div className="main-page">
-      <h1>Добро пожаловать!</h1>
-      <p>Это главная страница твоего приложения.</p>
-      <p>Здесь можно рассказать кратко, что делает проект.</p>
+      <h1>
+        Welcome to the <br/>
+        Family Budget System!
+      </h1>
 
-      <Link to="/login" className="btn-main">Перейти к авторизации</Link>
+      <Link to="/login" className="btn-main">Log in</Link>
     </div>
   );
 }

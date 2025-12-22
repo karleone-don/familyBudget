@@ -65,16 +65,23 @@ class UserLoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     role_name = serializers.SerializerMethodField(read_only=True)
     family_name = serializers.SerializerMethodField(read_only=True)
+    avatar = serializers.SerializerMethodField()
+
 
     class Meta:
         model = User
-        fields = ['user_id', 'username', 'email', 'age', 'role', 'role_name', 'family', 'family_name']
+        fields = ['user_id', 'username', 'email', 'age', 'role', 'role_name', 'family', 'family_name', 'avatar']
 
     def get_role_name(self, obj):
         return obj.role.role_name if obj.role else None
 
     def get_family_name(self, obj):
         return obj.family.family_name if obj.family else None
+    
+    def get_avatar(self, obj):
+        if obj.avatar:
+            return obj.avatar.url
+        return None
 
 class FamilySerializer(serializers.ModelSerializer):
     admin = UserSerializer(read_only=True)
@@ -90,6 +97,7 @@ class FinanceSerializer(serializers.ModelSerializer):
         fields = ['finance_id', 'balance', 'income', 'expenses', 'updated_at']
 
 class TransactionSerializer(serializers.ModelSerializer):
+    category_name = serializers.ReadOnlyField(source='category.category_name')
     class Meta:
         model = Transaction
         fields = '__all__'

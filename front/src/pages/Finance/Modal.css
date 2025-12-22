@@ -1,0 +1,126 @@
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 500px;
+  padding: 40px;
+  border: 5px solid #000;
+  background: #fff;
+  border-radius: 30px;
+}
+
+.modal-title {
+  font-family: 'Inika', sans-serif;
+  font-size: 2rem;
+  margin-bottom: 25px;
+  text-transform: lowercase;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.input-group label {
+  font-family: 'Inika', sans-serif;
+  font-size: 1rem;
+  margin-left: 15px;
+  text-transform: lowercase;
+}
+
+/* Одинаковые "таблетки" для всех полей */
+.modal-input, 
+.modal-select {
+  box-sizing: border-box; /* Важно для одинаковой ширины */
+  width: 100%;
+  height: 60px; /* Фиксированная высота для всех */
+  padding: 0 25px;
+  border: 4px solid #000;
+  border-radius: 50px;
+  font-family: "Inika", sans-serif;
+  font-size: 1.2rem;
+  background: #fff;
+  color: #000;
+  outline: none;
+}
+
+/* Убираем стандартную стрелку селекта, чтобы не ломать стиль таблетки */
+.modal-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 25px center;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.confirm-btn, .cancel-btn {
+  flex: 1;
+  height: 60px;
+  border-radius: 50px;
+  font-family: "Imprima", sans-serif;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s;
+}
+
+.confirm-btn {
+  background: #000;
+  color: #D6EFD7;
+}
+
+.cancel-btn {
+  background: #fff;
+  color: #000;
+  border: 4px solid #000;
+}
+
+.confirm-btn:hover { opacity: 0.8; }
+.modal-actions {
+    display: flex;
+    justify-content: space-between; /* Разносит кнопки по краям при редактировании */
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.delete-btn-modal {
+    background: none;
+    border: 2px solid #FF4a4a;
+    color: #FF4a4a;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.delete-btn-modal:hover {
+    background: #FF4a4a;
+    color: #fff;
+}
+
+/* Если это не редактирование, кнопки будут прижаты к правому краю */
+.modal-form:not(:has(.delete-btn-modal)) .modal-actions {
+    justify-content: flex-end;
+}

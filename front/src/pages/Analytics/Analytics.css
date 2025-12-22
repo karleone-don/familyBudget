@@ -1,0 +1,44 @@
+.analytics-full-page {
+  height: 95vh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory; /* "Прилипание" к экрану при скролле */
+  background: #fff;
+}
+
+.chart-section {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  scroll-snap-align: start;
+  padding: 40px;
+  box-sizing: border-box;
+  border-bottom: 10px solid #000;
+}
+
+.chart-section h2 {
+  font-family: 'Inika', sans-serif;
+  font-size: 3rem;
+  margin-bottom: 40px;
+  text-transform: lowercase;
+}
+
+.abs-back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 50px;
+  cursor: pointer;
+  font-family: 'Imprima', sans-serif;
+}
+
+.abs-back-btn:hover {
+  transform: scale(1.1);
+}

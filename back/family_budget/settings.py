@@ -6,6 +6,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-your-secret-key-here'  # Замените на случайный ключ
 DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -30,6 +33,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'family_budget.urls'
 

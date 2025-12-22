@@ -3,46 +3,101 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  background: #f3f4f6;
-}
-
-.login-title {
-  margin-bottom: 20px;
-  font-size: 24px;
+  height: 95vh;
+  font-family: 'Imprima', sans-serif;  /* или 'Inika' для заголовков */
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 250px;
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  gap: 30px;          /* больше пространства между строками */
+  width: 600px;       /* шире для лейблов + полей */
+  max-width: 90%;
 }
 
+/* Каждая строка: лейбл + инпут */
+.login-form > div {
+  display: flex;
+  align-items: center;     /* вертикальный центр для лейбла и инпута */
+  gap: 20px;               /* расстояние между лейблом и полем */
+}
+
+/* Лейблы */
+.login-form label {
+  width: 120px;            /* фиксированная ширина для ровного старта полей */
+  text-align: left;        /* теперь слева, текст начинается ровно */
+  font-size: 2rem;
+  color: #000000;
+  flex-shrink: 0;
+  display: flex;
+  font-family: "Imprima", sans-serif;
+  align-items: center;     /* дополнительно гарантирует вертикальный центр */
+  justify-content: center;  /* если хочешь текст прижатым к правому краю лейбла (классика для форм) */
+}
+
+/* Поля ввода в стиле "таблеток" с чёрным ободком */
 .login-form input {
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
+  flex: 1;                 /* занимает всё оставшееся место */
+  padding: 16px 20px;
+  border: 4px solid #000000;   /* чёрный ободок */
+  border-radius: 50px;
+  background: white;
+  outline: none;
+  transition: all 0.3s;
+  font-size: 2rem;
+  font-family: "Inika", sans-serif;
+  color: #111111;
+  justify-content: flex-end;
 }
 
+
+/* Кнопка */
 .login-form button {
-  background: #2563eb;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
+  width: 40%;
+  border-radius: 50px;
+  padding: 8px 0px;
+  background: #000000;
+  color: #D6EFD7;
+  font-size: 1.3rem;
+  font-family: "Imprima", sans-serif;
   cursor: pointer;
+  transition: all 0.3s;
 }
 
 .login-form button:hover {
-  background: #1e40af;
+  background: #222222;
 }
 
+.login-form .links {
+  width: 100%;
+  font-size: 2rem;
+  color: #7D88EC;
+  font-family: "Imprima", sans-serif;
+  text-align: right;
+  justify-content: flex-end;
+}
+.login-form .links :visited {
+  color: #7D88EC; /* чтобы цвет не менялся после перехода */
+}
+
+.login-form .links :hover {
+  color: #5b65d1; /* можно другой оттенок при наведении */
+}
+
+/* Остальное без изменений */
 .error {
-  color: red;
+  color: #ef4444;
   font-size: 14px;
+  text-align: center;
+  margin-top: -15px;
+}
+.login-form input::placeholder {
+  color: #c0c0c0;         /* серый цвет, как обычно */
+  opacity: 1;          /* в некоторых браузерах нужно явно */
+  font-size: 2rem;
+  font-family: "Inika", sans-serif;
+}
+
+.login-form input:focus::placeholder {
+  color: transparent;  /* опционально: скрывает placeholder при фокусе */
 }

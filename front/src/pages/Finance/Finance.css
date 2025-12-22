@@ -1,0 +1,175 @@
+/* ОБНОВЛЕННЫЙ КОНТЕЙНЕР */
+.finance-tracker-container {
+  display: flex;
+  flex-direction: column;
+  height: 95vh; /* Теперь высота строго по экрану */
+  padding: 40px 20px; /* Немного уменьшил верхний паддинг, чтобы влезло больше */
+  font-family: 'Imprima', sans-serif;
+  color: #000;
+  max-width: 1000px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow: hidden; /* Запрещаем скролл всему приложению */
+}
+
+/* ФИКСИРОВАННЫЙ ВЕРХ */
+.balance-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+  padding-bottom: 30px;
+  border-bottom: 8px solid #000;
+  margin-bottom: 20px;
+  flex-shrink: 0; /* Чтобы баланс не сжимался */
+}
+
+/* СКРОЛЛЯЩАЯСЯ ОБЛАСТЬ */
+.transactions-section {
+  width: 100%;
+  flex-grow: 1; /* Занимает всё место между балансом и кнопками */
+  overflow-y: auto; /* Включает скролл только тут */
+  padding-right: 15px; /* Отступ для скроллбара */
+}
+
+/* Убираем лишние верхние отступы у первого заголовка */
+.group-wrapper:first-child .group-header {
+  margin-top: 20px;
+}
+
+/* ФИКСИРОВАННЫЙ НИЗ */
+.footer-buttons {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  justify-content: center;
+  padding: 30px 0; /* Паддинги вместо маржина */
+  background: #fff; /* Чтобы транзакции не просвечивали под кнопками */
+  border-top: 2px solid #eee; /* Тонкая линия для визуального отделения */
+  flex-shrink: 0; /* Кнопки всегда на месте */
+}
+
+/* --- ОСТАЛЬНЫЕ СТИЛИ БЕЗ ИЗМЕНЕНИЙ (ТВОИ ОРИГИНАЛЬНЫЕ) --- */
+
+.balance-card .label {
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.balance-card .amount {
+  font-size: 5rem;
+  font-family: 'Inika', sans-serif;
+  line-height: 1;
+  margin: 0;
+}
+
+.stats-row {
+  display: flex;
+  gap: 40px;
+  font-size: 1.8rem;
+}
+
+.stat-item strong {
+  font-family: 'Inika', sans-serif;
+  display: block;
+  font-size: 2.2rem;
+}
+
+.group-header {
+  font-family: 'Inika', sans-serif;
+  font-size: 2.5rem;
+  margin: 60px 0 20px 0;
+  text-transform: lowercase;
+}
+
+.transaction-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 25px 0;
+  border-bottom: 2px solid #000;
+  background: none;
+}
+
+.t-left-side {
+  display: flex;
+  align-items: center;
+  gap: 50px;
+}
+
+.t-meta {
+  min-width: 100px;
+  font-family: 'Inika', sans-serif;
+}
+
+.t-time {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.t-date-small {
+  font-size: 1.2rem;
+  display: block;
+}
+
+.t-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.t-desc {
+  font-size: 2.2rem;
+  font-family: 'Imprima', sans-serif;
+}
+
+.t-cat-badge {
+  font-size: 1.1rem;
+  color: #7D88EC;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.t-amount {
+  font-size: 2.5rem;
+  font-family: 'Inika', sans-serif;
+  font-weight: bold;
+}
+
+.income { color: #27ae60; }
+.expense { color: #FF4a4a; }
+
+.add-btn-main {
+  width: 300px;
+  background: #000;
+  color: #D6EFD7;
+  padding: 15px;
+  border-radius: 50px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  border: none;
+}
+
+.back-btn {
+  background: none;
+  border: 4px solid #000;
+  padding: 15px 30px;
+  border-radius: 50px;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* КРАСИВЫЙ СКРОЛЛБАР */
+.transactions-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+.transactions-section::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.transactions-section::-webkit-scrollbar-thumb {
+  background: #000;
+  border-radius: 10px;
+}
