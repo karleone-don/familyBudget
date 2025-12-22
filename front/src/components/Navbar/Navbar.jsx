@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import "./Navbar.css";
 
 const API_URL = "http://127.0.0.1:8000";
@@ -7,6 +8,7 @@ const API_URL = "http://127.0.0.1:8000";
 export default function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { t, i18n } = useTranslation();
     const token = localStorage.getItem("token");
     const [user, setUser] = useState(null);
     const [showMenu, setShowMenu] = useState(false);
@@ -34,6 +36,11 @@ export default function Navbar() {
         navigate("/login");
     };
 
+    const changeLanguage = (lng) => {
+        i18n.changeLanguage(lng);
+        setShowMenu(false);
+    };
+
     return (
         <nav className="navbar">
             <div className="navbar-container">
@@ -55,7 +62,7 @@ export default function Navbar() {
                                     setShowMenu(false);
                                 }}
                             >
-                                Profile
+                                {t("Profile")}
                             </button>
                             <button 
                                 className="navbar-link"
@@ -64,7 +71,7 @@ export default function Navbar() {
                                     setShowMenu(false);
                                 }}
                             >
-                                Finance
+                                {t("Finance")}
                             </button>
                             <button 
                                 className="navbar-link"
@@ -73,7 +80,7 @@ export default function Navbar() {
                                     setShowMenu(false);
                                 }}
                             >
-                                Analytics
+                                {t("Analytics")}
                             </button>
                             <button 
                                 className="navbar-link"
@@ -82,14 +89,30 @@ export default function Navbar() {
                                     setShowMenu(false);
                                 }}
                             >
-                                AI Recommendations
+                                {t("AI Recommendations")}
                             </button>
+                            <hr className="navbar-divider" />
+                            <div className="language-selector">
+                                <span className="language-label">{t("Language")}:</span>
+                                <button 
+                                    className={`language-btn ${i18n.language === 'en' ? 'active' : ''}`}
+                                    onClick={() => changeLanguage('en')}
+                                >
+                                    EN
+                                </button>
+                                <button 
+                                    className={`language-btn ${i18n.language === 'ru' ? 'active' : ''}`}
+                                    onClick={() => changeLanguage('ru')}
+                                >
+                                    RU
+                                </button>
+                            </div>
                             <hr className="navbar-divider" />
                             <button 
                                 className="navbar-logout"
                                 onClick={handleLogout}
                             >
-                                Logout
+                                {t("Logout")}
                             </button>
                         </div>
                     )}

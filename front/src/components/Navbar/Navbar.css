@@ -104,3 +104,39 @@
     background: #FF5252;
     padding-left: 25px;
 }
+
+.language-selector {
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.language-label {
+    color: #01B7E0;
+    font-size: 0.9rem;
+    font-family: 'Inika', sans-serif;
+}
+
+.language-btn {
+    background: #f0f0f0;
+    border: 1px solid #01B7E0;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #01B7E0;
+    transition: all 0.2s;
+    font-family: 'Inika', sans-serif;
+}
+
+.language-btn:hover {
+    background: #01B7E0;
+    color: white;
+}
+
+.language-btn.active {
+    background: #01B7E0;
+    color: white;
+    font-weight: bold;
+}
