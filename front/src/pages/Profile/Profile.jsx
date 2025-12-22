@@ -125,15 +125,29 @@ export default function ProfilePage() {
             <>
               <div className="username">{profile.username}</div>
 
-              <div className="family-row">
-                <div>{profile.family?.family_name ?? "No family"}</div>
-                {!profile.family && (
-                  <button className="find-family-btn">Find family</button>
-                )}
+        <div className="family-row">
+          {profile.family ? (
+              // Если семья есть, показываем название и кнопку перехода к списку участников
+              <div className="family-active">
+                  <span className="family-name">{profile.family_name}</span>
+                  <button 
+                      className="view-family-btn" 
+                      onClick={() => navigate("/family-members", { state: { familyId: profile.family } })}
+                  >
+                      Family
+                  </button>
               </div>
-
-              <div className="age">{profile.age ? profile.age + " age" : ""}</div>
-            </>
+          ) : (
+              // Если семьи нет, показываем кнопку поиска
+              <div className="family-active">
+                  <span className="family-name">No family</span>
+                  <button 
+                      className="find-family-btn" 
+                      onClick={() => navigate("/family-search")}
+                  >
+                      Find family
+                  </button>
+              </div>
           )}
         </div>
       </div>

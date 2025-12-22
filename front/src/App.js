@@ -6,6 +6,9 @@ import ProfilePage from "./pages/Profile/Profile";
 import FinanceTracker from "./pages/Finance/Finance";
 import AnalyticsPage from "./pages/Analytics/Analytics";
 import AIRecommendations from "./pages/AIRecommendations/AIRecommendations";
+import FamilySearchPage from "./pages/FamilySearch/FamilySearch";
+import CreateFamilyPage from "./pages/CreateFamily/CreateFamily";
+import FamilyMembersPage from "./pages/Family/Family";
 
 function App() {
   return (
@@ -19,6 +22,9 @@ function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/ai-recommendations" element={<AIRecommendations />} />
         <Route path="/solo-dashboard" element={<ProfilePage />} />
+        <Route path="/family-search" element={<FamilySearchPage />} />
+        <Route path="/family/create" element={<CreateFamilyPage />} />
+        <Route path="/family-members" element={<FamilyMembersPage />} />
         <Route path="*" element={<ProfilePage />} />
       </Routes>
     </BrowserRouter>

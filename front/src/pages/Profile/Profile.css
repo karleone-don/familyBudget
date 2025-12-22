@@ -32,7 +32,7 @@
   margin-top: 40px;
 }
 
-.family-row {
+.family-active {
   display: flex;
   align-items: center;
   gap: 100px;
