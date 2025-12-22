@@ -125,43 +125,46 @@ export default function ProfilePage() {
             <>
               <div className="username">{profile.username}</div>
 
-        <div className="family-row">
-          {profile.family ? (
-              // Если семья есть, показываем название и кнопку перехода к списку участников
-              <div className="family-active">
-                  <span className="family-name">{profile.family_name}</span>
-                  <button 
-                      className="view-family-btn" 
-                      onClick={() => navigate("/family-members", { state: { familyId: profile.family } })}
-                  >
-                      Family
-                  </button>
+              <div className="family-row">
+                {profile.family ? (
+                    // Если семья есть, показываем название и кнопку перехода к списку участников
+                    <div className="family-active">
+                        <span className="family-name">{profile.family_name}</span>
+                        <button 
+                            className="view-family-btn" 
+                            onClick={() => navigate("/family-members", { state: { familyId: profile.family } })}
+                        >
+                            Family
+                        </button>
+                    </div>
+                ) : (
+                    // Если семьи нет, показываем кнопку поиска
+                    <div className="family-active">
+                        <span className="family-name">No family</span>
+                        <button 
+                            className="find-family-btn" 
+                            onClick={() => navigate("/family-search")}
+                        >
+                            Find family
+                        </button>
+                    </div>
+                )}
               </div>
-          ) : (
-              // Если семьи нет, показываем кнопку поиска
-              <div className="family-active">
-                  <span className="family-name">No family</span>
-                  <button 
-                      className="find-family-btn" 
-                      onClick={() => navigate("/family-search")}
-                  >
-                      Find family
+
+              <div className="email">{profile.email}</div>
+              <div className="buttons">
+                {!isEditing && (
+                  <button className="change-data-btn" onClick={() => setIsEditing(true)}>
+                    Change Data
                   </button>
+                )}
+                <button className="finance-tracker-btn" onClick={() => navigate("/finance")}>
+                  Finance tracker
+                </button>
               </div>
+            </>
           )}
         </div>
-      </div>
-
-      <div className="email">{profile.email}</div>
-      <div className="buttons">
-        {!isEditing && (
-          <button className="change-data-btn" onClick={() => setIsEditing(true)}>
-            Change Data
-          </button>
-        )}
-        <button className="finance-tracker-btn" onClick={() => navigate("/finance")}>
-          Finance tracker
-        </button>
       </div>
     </div>
   );

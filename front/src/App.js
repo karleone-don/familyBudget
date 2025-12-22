@@ -9,10 +9,13 @@ import AIRecommendations from "./pages/AIRecommendations/AIRecommendations";
 import FamilySearchPage from "./pages/FamilySearch/FamilySearch";
 import CreateFamilyPage from "./pages/CreateFamily/CreateFamily";
 import FamilyMembersPage from "./pages/Family/Family";
+import FamilyDashboard from "./pages/FamilyDashboard/FamilyDashboard";
+import Navbar from "./components/Navbar/Navbar";
 
 function App() {
   return (
     <BrowserRouter>
+      <Navbar />
       <Routes>
         <Route path="/" element={<Main />} />
         <Route path="/login" element={<Login />} />
@@ -25,6 +28,7 @@ function App() {
         <Route path="/family-search" element={<FamilySearchPage />} />
         <Route path="/family/create" element={<CreateFamilyPage />} />
         <Route path="/family-members" element={<FamilyMembersPage />} />
+        <Route path="/family-dashboard" element={<FamilyDashboard />} />
         <Route path="*" element={<ProfilePage />} />
       </Routes>
     </BrowserRouter>

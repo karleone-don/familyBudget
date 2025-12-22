@@ -174,6 +174,7 @@ export default function FinanceTracker() {
                     <div className="t-meta">
                       <span className="t-time">{new Date(t.date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
                       {groupName !== "Today" && <span className="t-date-small">{new Date(t.date).toLocaleDateString("en-US", { day: "2-digit", month: "2-digit" })}</span>}
+                      {t.user_username && <span className="t-user-badge">{t.user_username}</span>}
                     </div>
                     <div className="t-info">
                       <span className="t-desc">{t.description || t.category_name}</span>

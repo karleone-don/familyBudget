@@ -102,6 +102,10 @@
 .t-meta {
   min-width: 100px;
   font-family: 'Inika', sans-serif;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .t-time {
@@ -112,6 +116,17 @@
 .t-date-small {
   font-size: 1.2rem;
   display: block;
+}
+
+.t-user-badge {
+  font-size: 0.9rem;
+  background: #7D88EC;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: bold;
 }
 
 .t-info {

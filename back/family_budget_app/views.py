@@ -254,6 +254,159 @@ class FamilyViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """Search for families by name"""
+        name = request.query_params.get('name', '').strip()
+        if not name:
+            return Response({'error': 'name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        families = Family.objects.filter(family_name__icontains=name)
+        serializer = FamilySerializer(families, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def join_request(self, request):
+        """User sends a join request to a family"""
+        family_id = request.data.get('family_id')
+        if not family_id:
+            return Response({'error': 'family_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            family = Family.objects.get(family_id=family_id)
+        except Family.DoesNotExist:
+            return Response({'error': 'Family not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Create a join request by directly adding the user to the family
+        request.user.family = family
+        member_role = Role.objects.get(role_name='family_member')
+        request.user.role = member_role
+        request.user.save()
+        
+        return Response({'message': f'Successfully joined {family.family_name}'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def invites(self, request):
+        """Get all pending invitations for the current user"""
+        user_email = request.user.email
+        invitations = Invitation.objects.filter(invited_email__iexact=user_email, accepted=False)
+        serializer = InvitationSerializer(invitations, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def accept_invitation(self, request):
+        """Accept a pending invitation"""
+        invitation_id = request.data.get('invitation_id')
+        if not invitation_id:
+            return Response({'error': 'invitation_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            invitation = Invitation.objects.get(id=invitation_id, accepted=False)
+        except Invitation.DoesNotExist:
+            return Response({'error': 'Invitation not found or already accepted'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if invitation is for this user
+        if request.user.email.lower() != invitation.invited_email.lower():
+            return Response({'error': 'This invitation is not for your account'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Add user to family
+        request.user.family = invitation.family
+        member_role = Role.objects.get(role_name='family_member')
+        request.user.role = member_role
+        request.user.save()
+        
+        # Mark invitation as accepted
+        invitation.accepted = True
+        invitation.save()
+        
+        return Response({'message': f'Successfully joined {invitation.family.family_name}'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def pending_invites(self, request, pk=None):
+        """Get all pending invitations for a family (admin only)"""
+        family = self.get_object()
+        if request.user != family.admin:
+            return Response({'error': 'Only admin can view pending invites'}, status=status.HTTP_403_FORBIDDEN)
+        
+        pending = Invitation.objects.filter(family=family, accepted=False)
+        serializer = InvitationSerializer(pending, many=True)
+        return Response({'invitations': serializer.data})
+
+    @action(detail=True, methods=['post'])
+    def manage_invite(self, request, pk=None):
+        """Admin can accept or decline a pending invitation"""
+        family = self.get_object()
+        if request.user != family.admin:
+            return Response({'error': 'Only admin can manage invites'}, status=status.HTTP_403_FORBIDDEN)
+        
+        invitation_id = request.data.get('invitation_id')
+        action = request.data.get('action')  # 'accept' or 'decline'
+        
+        if not invitation_id or not action:
+            return Response({'error': 'invitation_id and action are required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            invitation = Invitation.objects.get(invitation_id=invitation_id, family=family, accepted=False)
+        except Invitation.DoesNotExist:
+            return Response({'error': 'Invitation not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if action == 'accept':
+            # Find or create the user with that email
+            try:
+                user = User.objects.get(email__iexact=invitation.invited_email)
+                user.family = family
+                member_role = Role.objects.get(role_name='family_member')
+                user.role = member_role
+                user.save()
+                invitation.accepted = True
+                invitation.save()
+                return Response({'message': 'Invitation accepted and user added to family'})
+            except User.DoesNotExist:
+                return Response({'error': 'User with this email not found'}, status=status.HTTP_404_NOT_FOUND)
+        elif action == 'decline':
+            invitation.delete()
+            return Response({'message': 'Invitation declined'})
+        else:
+            return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def finance_summary(self, request, pk=None):
+        """Get family finance summary"""
+        family = self.get_object()
+        
+        # Check if user belongs to this family
+        if request.user.family != family:
+            return Response({'error': 'Cannot access this family\'s finance data'}, status=status.HTTP_403_FORBIDDEN)
+        
+        family_members = User.objects.filter(family=family)
+        finances = Finance.objects.filter(user__in=family_members)
+
+        total_balance = sum(finance.balance for finance in finances)
+        total_income = sum(finance.income for finance in finances)
+        total_expenses = sum(finance.expenses for finance in finances)
+
+        return Response({
+            'total_balance': total_balance,
+            'total_income': total_income,
+            'total_expenses': total_expenses,
+            'member_count': family_members.count()
+        })
+
+    @action(detail=True, methods=['get'])
+    def transactions(self, request, pk=None):
+        """Get all transactions for the family"""
+        family = self.get_object()
+        
+        # Check if user belongs to this family
+        if request.user.family != family:
+            return Response({'error': 'Cannot access this family\'s transactions'}, status=status.HTTP_403_FORBIDDEN)
+        
+        family_members = User.objects.filter(family=family)
+        transactions = Transaction.objects.filter(finance__user__in=family_members).order_by('-date')
+        
+        serializer = TransactionSerializer(transactions, many=True)
+        return Response({'results': serializer.data})
+
 class FinanceViewSet(viewsets.ModelViewSet):
     queryset = Finance.objects.all()
     serializer_class = FinanceSerializer
@@ -309,20 +462,52 @@ class FinanceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(finance)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def member_data(self, request):
+        """Get finance data for a specific family member"""
+        user_id = request.query_params.get('user_id')
+        if not user_id:
+            return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            target_user = User.objects.get(user_id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if requester and target user are in the same family
+        if request.user.family != target_user.family or not request.user.family:
+            return Response({'error': 'Cannot access this user\'s finance data'}, status=status.HTTP_403_FORBIDDEN)
+        
+        finance, created = Finance.objects.get_or_create(user=target_user)
+        serializer = self.get_serializer(finance)
+        return Response(serializer.data)
+
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
     def get_queryset(self):
         user = self.request.user
         target_user_id = self.request.query_params.get('user_id')
 
-        # Если в URL передан ?user_id=5
+        # If user_id is specified in the query
         if target_user_id:
-            # Тут можно добавить проверку: в одной ли они семье?
-            return Transaction.objects.filter(finance__user_id=target_user_id).order_by('-date')
+            try:
+                target_user = User.objects.get(user_id=target_user_id)
+                # Check if both users are in the same family
+                if user.family and target_user.family == user.family:
+                    return Transaction.objects.filter(finance__user_id=target_user_id).order_by('-date')
+                elif user.user_id == target_user_id:
+                    # Users can always see their own transactions
+                    return Transaction.objects.filter(finance__user=user).order_by('-date')
+                else:
+                    # Cannot access other users' transactions if not in same family
+                    return Transaction.objects.none()
+            except User.DoesNotExist:
+                return Transaction.objects.none()
         
-        # По умолчанию отдаем только свои
+        # By default return only own transactions
         return Transaction.objects.filter(finance__user=user).order_by('-date')
 
 class GoalViewSet(viewsets.ModelViewSet):

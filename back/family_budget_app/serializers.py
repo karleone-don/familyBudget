@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User, Family, Role, Finance, Transaction, Category, Goal
+from .models import User, Family, Role, Finance, Transaction, Category, Goal, Invitation
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -70,7 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['user_id', 'username', 'email', 'age', 'role', 'role_name', 'family', 'family_name', 'avatar']
+        fields = ['user_id', 'username', 'email', 'first_name', 'age', 'role', 'role_name', 'family', 'family_name', 'avatar']
 
     def get_role_name(self, obj):
         return obj.role.role_name if obj.role else None
@@ -98,6 +98,7 @@ class FinanceSerializer(serializers.ModelSerializer):
 
 class TransactionSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.category_name')
+    user_username = serializers.ReadOnlyField(source='finance.user.username')
     class Meta:
         model = Transaction
         fields = '__all__'
@@ -113,3 +114,11 @@ class GoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Goal
         fields = '__all__'
+
+class InvitationSerializer(serializers.ModelSerializer):
+    family_name = serializers.CharField(source='family.family_name', read_only=True)
+
+    class Meta:
+        model = Invitation
+        fields = ['invitation_id', 'id', 'family', 'family_name', 'invited_email', 'invited_by', 'token', 'accepted', 'created_at']
+        read_only_fields = ['token', 'created_at', 'invitation_id']
