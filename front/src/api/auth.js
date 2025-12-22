@@ -57,3 +57,27 @@ export function getAuthHeaders() {
   const token = getToken();
   return token ? { Authorization: `Token ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
 }
+
+export async function updateProfileApi(profileData) {
+  const token = getToken();
+  if (!token) {
+    throw new Error("No token found");
+  }
+
+  const res = await fetch(`${API_URL}/api/users/update_profile/`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Token ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(profileData),
+  });
+  const data = await parseJsonSafe(res);
+  if (!res.ok) {
+    const err = new Error("Update failed");
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}

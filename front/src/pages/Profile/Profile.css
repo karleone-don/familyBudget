@@ -72,6 +72,61 @@ button:hover {
   justify-content: space-between;
 }
 
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.edit-input {
+  padding: 10px 15px;
+  font-size: 1.1rem;
+  border: 2px solid #000000;
+  border-radius: 5px;
+  font-family: 'Inika', sans-serif;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.save-btn,
+.cancel-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 50px;
+  border: none;
+  background: #000000;
+  color: #D6EFD7;
+  font-size: 1.1rem;
+  font-family: "Imprima", sans-serif;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #4CAF50;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: #f44336;
+}
+
+.save-btn:disabled,
+.cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 
 
 /* Адаптив для экранов меньше 600px */

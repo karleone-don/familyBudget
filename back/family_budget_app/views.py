@@ -9,7 +9,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 
 def _role_to_redirect(role_name: str):
@@ -63,12 +63,28 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     @action(detail=False, methods=['get'])
     def profile(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['put', 'patch'])
+    def update_profile(self, request):
+        """Update user profile data (username, age, email)"""
+        user = request.user
+        
+        # Update allowed fields
+        if 'username' in request.data:
+            user.username = request.data['username']
+        if 'age' in request.data:
+            user.age = request.data['age']
+        if 'email' in request.data:
+            user.email = request.data['email']
+        
+        user.save()
+        return Response(UserSerializer(user).data, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['post'])
     def upload_avatar(self, request):
